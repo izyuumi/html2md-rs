@@ -1,28 +1,8 @@
+use crate::structs::{
+    Node,
+    NodeType::{self, *},
+};
 use std::collections::HashMap;
-
-#[derive(Debug)]
-enum NodeType {
-    H1,
-    H2,
-    H3,
-    H4,
-    H5,
-    H6,
-    P,
-    Strong,
-    Em,
-    A,
-    Text,
-}
-use NodeType::*;
-
-#[derive(Debug)]
-pub struct Node {
-    tag_name: Option<NodeType>,
-    value: Option<String>,
-    attributes: Option<HashMap<String, String>>,
-    children: Vec<Node>,
-}
 
 pub fn parse_html(input: String) -> Node {
     let mut current_index = 0;
@@ -31,7 +11,7 @@ pub fn parse_html(input: String) -> Node {
     let mut stack: Vec<Node> = Vec::new();
 
     while current_index < input.len() {
-        let mut rest = &input[current_index..];
+        let rest = &input[current_index..];
         if rest.starts_with('<') {
             let closing_index = rest.find('>').expect("malformed tag");
             let tag_content = &rest[1..closing_index];
@@ -117,18 +97,10 @@ fn string_to_node_type(input: &str) -> NodeType {
         "h5" => H5,
         "h6" => H6,
         "p" => P,
+        "div" => Div,
         "strong" => Strong,
         "em" => Em,
         "a" => A,
         _ => Text,
     }
-}
-
-fn main() {
-    let my_html = r"<html><body><h1>Hello World</h1>
-        <p class='test'>This is a paragraph</p>
-        <p>This is <strong>another</strong> paragraph</p>
-        </body></html>";
-    let parsed = parse_html(my_html.to_string());
-    println!("{:#?}", parsed);
 }
