@@ -16,6 +16,25 @@ pub enum NodeType {
     Text,
 }
 
+impl NodeType {
+    pub fn from_str(input: &str) -> NodeType {
+        match input {
+            "h1" => NodeType::H1,
+            "h2" => NodeType::H2,
+            "h3" => NodeType::H3,
+            "h4" => NodeType::H4,
+            "h5" => NodeType::H5,
+            "h6" => NodeType::H6,
+            "p" => NodeType::P,
+            "div" => NodeType::Div,
+            "strong" => NodeType::Strong,
+            "em" => NodeType::Em,
+            "a" => NodeType::A,
+            _ => NodeType::Text,
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct Node {
     pub tag_name: Option<NodeType>,

@@ -39,7 +39,7 @@ pub fn parse_html(input: String) -> Node {
                 node_name = tag_content;
             }
 
-            let node_type = string_to_node_type(node_name);
+            let node_type = NodeType::from_str(node_name);
             if rest.starts_with("</") {
                 let last_node = stack.pop().expect("malformed html");
                 if stack.is_empty() {
@@ -85,22 +85,5 @@ pub fn parse_html(input: String) -> Node {
         value: None,
         attributes: None,
         children: nodes,
-    }
-}
-
-fn string_to_node_type(input: &str) -> NodeType {
-    match input {
-        "h1" => H1,
-        "h2" => H2,
-        "h3" => H3,
-        "h4" => H4,
-        "h5" => H5,
-        "h6" => H6,
-        "p" => P,
-        "div" => Div,
-        "strong" => Strong,
-        "em" => Em,
-        "a" => A,
-        _ => Text,
     }
 }
