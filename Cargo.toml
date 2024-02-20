@@ -2,5 +2,14 @@
 name = "html2md-rs"
 version = "0.1.0"
 edition = "2021"
+authors = ["Yumi Izumi <mail@yumi.to>"]
+description = "Convert HTML to Markdown"
+documentation = "https://github.com/izyumidev/html2md-rs"
+readme = "README.md"
+homepage = "https://github.com/izyumidev/html2md-rs"
+repository = "https://github.com/izyumidev/html2md-rs"
+license = "MIT"
+keywords = ["html", "markdown", "html2md", "html-to-markdown", "html-to-md"]
+categories = ["parsing"]
 
 [dependencies]
