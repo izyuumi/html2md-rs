@@ -16,7 +16,7 @@ pub fn parse_html(input: String) -> Node {
             let closing_index = rest.find('>').expect("malformed tag");
             let tag_content = &rest[1..closing_index];
 
-            let mut node_name = "";
+            let node_name;
             let mut attribute_map = None;
             if tag_content.contains(' ') {
                 let space_index = tag_content.find(' ').unwrap();
