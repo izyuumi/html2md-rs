@@ -5,7 +5,7 @@ mod to_md_tests {
     #[test]
     fn simple_paragraph_with_text() {
         let input = "<p>hello</p>".to_string();
-        let expected = "hello".to_string();
+        let expected = "hello\n".to_string();
         assert_eq!(to_md(parse_html(input)), expected);
     }
 
@@ -19,7 +19,7 @@ mod to_md_tests {
     #[test]
     fn paragraph_with_strong() {
         let input = "<p>hello <strong>world</strong></p>".to_string();
-        let expected = "hello **world**".to_string();
+        let expected = "hello **world**\n".to_string();
         assert_eq!(to_md(parse_html(input)), expected);
     }
 
@@ -41,6 +41,13 @@ mod to_md_tests {
     fn ordered_list() {
         let input = "<ol><li>hello</li><li>world</li></ol>".to_string();
         let expected = "1. hello\n2. world\n".to_string();
+        assert_eq!(to_md(parse_html(input)), expected);
+    }
+
+    #[test]
+    fn multiple_paragraphs() {
+        let input = "<p>hello</p><p>world</p>".to_string();
+        let expected = "hello\nworld\n".to_string();
         assert_eq!(to_md(parse_html(input)), expected);
     }
 }
