@@ -49,7 +49,7 @@ pub fn to_md(node: Node) -> String {
                 tail.push_str("\n");
             }
             P => {
-                tail.push_str("\n");
+                tail.push_str("\n\n");
             }
             Text => {
                 res.push_str(&node.value.unwrap_or("".to_string()));
