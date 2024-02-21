@@ -49,6 +49,12 @@ pub fn to_md(node: Node) -> String {
                 tail.push_str("\n");
             }
             P => {
+                if node.children.len() == 1
+                    && node.children[0].tag_name == Some(Text)
+                    && node.children[0].value.is_none()
+                {
+                    return res;
+                }
                 tail.push_str("\n\n");
             }
             Text => {
