@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum NodeType {
     H1,
     H2,
@@ -13,6 +13,9 @@ pub enum NodeType {
     Strong,
     Em,
     A,
+    Ul,
+    Ol,
+    Li,
     Text,
 }
 
@@ -30,12 +33,15 @@ impl NodeType {
             "strong" => NodeType::Strong,
             "em" => NodeType::Em,
             "a" => NodeType::A,
+            "ul" => NodeType::Ul,
+            "ol" => NodeType::Ol,
+            "li" => NodeType::Li,
             _ => NodeType::Text,
         }
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Node {
     pub tag_name: Option<NodeType>,
     pub value: Option<String>,

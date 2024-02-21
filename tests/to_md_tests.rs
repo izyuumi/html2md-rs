@@ -29,4 +29,18 @@ mod to_md_tests {
         let expected = "# **hello**\n".to_string();
         assert_eq!(to_md(parse_html(input)), expected);
     }
+
+    #[test]
+    fn unordered_list() {
+        let input = "<ul><li>hello</li><li>world</li></ul>".to_string();
+        let expected = "- hello\n- world\n".to_string();
+        assert_eq!(to_md(parse_html(input)), expected);
+    }
+
+    #[test]
+    fn ordered_list() {
+        let input = "<ol><li>hello</li><li>world</li></ol>".to_string();
+        let expected = "1. hello\n2. world\n".to_string();
+        assert_eq!(to_md(parse_html(input)), expected);
+    }
 }

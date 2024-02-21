@@ -3,6 +3,7 @@ use crate::structs::{Node, NodeType::*};
 pub fn to_md(node: Node) -> String {
     let mut res = String::new();
     let mut tail = String::new();
+    let mut follow_child = true;
 
     if let Some(tag_type) = node.tag_name {
         match tag_type {
@@ -28,6 +29,25 @@ pub fn to_md(node: Node) -> String {
                 res.push_str("[");
                 tail.push_str("](");
             }
+            Ul => {
+                for child in &node.children {
+                    res.push_str("- ");
+                    res.push_str(&to_md(child.clone()));
+                }
+                follow_child = false;
+            }
+            Ol => {
+                let mut i = 1;
+                for child in &node.children {
+                    res.push_str(&format!("{}. ", i));
+                    res.push_str(&to_md(child.clone()));
+                    i += 1;
+                }
+                follow_child = false;
+            }
+            Li => {
+                tail.push_str("\n");
+            }
             Text => {
                 res.push_str(&node.value.unwrap_or("".to_string()));
                 return res;
@@ -36,8 +56,10 @@ pub fn to_md(node: Node) -> String {
         }
     }
 
-    for child in node.children {
-        res.push_str(&to_md(child));
+    if follow_child {
+        for child in node.children {
+            res.push_str(&to_md(child));
+        }
     }
 
     res.push_str(&tail);
