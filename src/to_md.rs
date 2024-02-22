@@ -72,3 +72,8 @@ pub fn to_md(node: Node) -> String {
 
     res
 }
+
+pub fn from_html_to_md(input: String) -> String {
+    let node = crate::parser::parse_html(input);
+    to_md(node)
+}

@@ -8,13 +8,12 @@ Parses HTML and converts it to markdown.
 ## Usage
 
 ```rust
-use html2md_rs::{parser::parse_html, to_md::to_md};
+use html2md_rs::to_md::from_html_to_md;
 
 fn main() {
     let html = "<h1>Hello, World!</h1>";
-    let parsed = parse_html(html);
-    let md = to_md(&parsed);
-    println!("{}", md);
+    let md = from_html_to_md(html);
+    assert_eq!(md, "# Hello, World!");
 }
 ```
 
