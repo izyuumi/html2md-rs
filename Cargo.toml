@@ -1,6 +1,6 @@
 [package]
 name = "html2md-rs"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 authors = ["Yumi Izumi <mail@yumi.to>"]
 description = "Convert HTML to Markdown"
