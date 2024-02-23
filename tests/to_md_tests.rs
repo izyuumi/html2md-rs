@@ -57,4 +57,11 @@ mod to_md_tests {
         let expected = "hello\n\nworld\n\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
+
+    #[test]
+    fn header_and_paragraph() {
+        let input = "<h1>hello</h1><p></p><p>world</p>".to_string();
+        let expected = "# hello\nworld\n".to_string();
+        assert_eq!(from_html_to_md(input), expected);
+    }
 }
