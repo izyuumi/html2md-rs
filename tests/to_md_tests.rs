@@ -64,4 +64,10 @@ mod to_md_tests {
         let expected = "# hello\nworld\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
+    #[test]
+    fn header_in_header() {
+        let input = "<h1># hello</h1>",to_string();
+        let expected = "# # hello\n", expected();
+        assert_eq!(from_html_to_md(input), expected);
+    }
 }
