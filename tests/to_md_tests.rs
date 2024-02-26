@@ -83,6 +83,13 @@ mod to_md_tests {
     fn header_in_subheader() {
         let input = "<h2># hello</h2>", to_string();
         let expected "## # hello\n", expected();
+         assert_eq!(from_html_to_md(input), expected);
+    }
+
+    #[test]
+    fn paragraph_with_link() {
+        let input = "<p><a href=\"https://example.com\">hello</a></p>".to_string();
+        let expected = "[hello](https://example.com)\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
 }
