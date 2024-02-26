@@ -18,22 +18,62 @@ pub fn parse_html(input: String) -> Node {
 
             let node_name;
             let mut attribute_map = None;
-            if tag_content.contains(' ') {
-                let space_index = tag_content.find(' ').unwrap();
+            if let Some(space_index) = tag_content.find(' ') {
                 node_name = &tag_content[..space_index];
                 let attributes = &tag_content[space_index..];
                 attribute_map = Some(HashMap::new());
-                'attribute_loop: for attr in attributes.split(' ') {
-                    let mut key_value = attr.split('=');
-                    let key = key_value.next().unwrap_or("");
-                    if key.is_empty() {
+                let mut in_quotes = false;
+                let mut current_key = String::new();
+                let mut current_value_in_quotes = String::new();
+                'attribute_loop: for attr in attributes.split_whitespace() {
+                    if attr.contains('=') {
+                        if attr.starts_with('=') || attr.ends_with('=') {
+                            panic!(
+                                "malformed html, attribute key missing. starting or ending with \"=\": {}",
+                                attr
+                            );
+                        }
+                        if let Some(key_value) = attr.split_once('=') {
+                            if key_value.1.starts_with('"') {
+                                if key_value.1.ends_with('"') {
+                                    attribute_map.as_mut().unwrap().insert(
+                                        key_value.0.to_string(),
+                                        key_value.1[1..key_value.1.len() - 1].to_string(),
+                                    );
+                                    continue 'attribute_loop;
+                                }
+                                in_quotes = true;
+                                (current_key, current_value_in_quotes) =
+                                    (key_value.0.to_string(), key_value.1[1..].to_string());
+                                continue 'attribute_loop;
+                            }
+                            attribute_map
+                                .as_mut()
+                                .unwrap()
+                                .insert(key_value.0.to_string(), key_value.1.to_string());
+                        }
                         continue 'attribute_loop;
                     }
-                    let value = key_value.next().unwrap_or("");
-                    attribute_map
-                        .as_mut()
-                        .unwrap()
-                        .insert(key.to_string(), value.to_string());
+                    if !in_quotes {
+                        panic!("malformed html, attribute value missing: {}", attr);
+                    }
+                    if attr.contains('"') {
+                        if attr.ends_with('"') {
+                            in_quotes = false;
+                            current_value_in_quotes.push_str(&attr[..attr.len() - 1]);
+                            attribute_map
+                                .as_mut()
+                                .unwrap()
+                                .insert(current_key.clone(), current_value_in_quotes.clone());
+                            current_key.clear();
+                            current_value_in_quotes.clear();
+                            continue 'attribute_loop;
+                        }
+                        panic!("malformed html, attribute value contains quotes: {}", attr);
+                    }
+                }
+                if in_quotes {
+                    panic!("malformed html, missing closing quote for attribute value");
                 }
             } else {
                 node_name = tag_content;

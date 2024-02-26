@@ -64,4 +64,11 @@ mod to_md_tests {
         let expected = "# hello\nworld\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
+
+    #[test]
+    fn paragraph_with_link() {
+        let input = "<p><a href=\"https://example.com\">hello</a></p>".to_string();
+        let expected = "[hello](https://example.com)\n".to_string();
+        assert_eq!(from_html_to_md(input), expected);
+    }
 }

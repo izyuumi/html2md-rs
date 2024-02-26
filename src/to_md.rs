@@ -26,8 +26,13 @@ pub fn to_md(node: Node) -> String {
                 tail.push_str("*");
             }
             A => {
-                res.push_str("[");
-                tail.push_str("](");
+                if let Some(link) = node.attributes.as_ref().and_then(|attrs| attrs.get("href")) {
+                    res.push_str("[");
+                    tail.push_str(&format!("]({})", link));
+                } else {
+                    res.push_str("[");
+                    tail.push_str("]");
+                }
             }
             Ul => {
                 for child in &node.children {
