@@ -23,7 +23,7 @@ Check the supported HTML tags [here](./src/structs.rs).
 
 ## Markdown convention
 
-There are many markdown conventions/standards out there. This is the one we reference throughout this project: <https://spec.commonmark.org/0.31.2/>
+There are many markdown conventions/standards out there. The one we reference throughout this project is CommonMark Spec from: <https://spec.commonmark.org/0.31.2/>
 
 ## License
 
