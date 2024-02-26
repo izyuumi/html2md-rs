@@ -54,7 +54,7 @@ mod to_md_tests {
     #[test]
     fn multiple_paragraphs_with_empty_paragraph() {
         let input = "<p>hello</p><p></p><p>world</p>".to_string();
-        let expected = "hello\nworld\n".to_string();
+        let expected = "hello\n\nworld\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
 
@@ -63,6 +63,27 @@ mod to_md_tests {
         let input = "<h1>hello</h1><p></p><p>world</p>".to_string();
         let expected = "# hello\nworld\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
+    }
+
+    #[test]
+    fn header_in_header() {
+        let input = "<h1># hello</h1>".to_string();
+        let expected = "# # hello\n".to_string();
+        assert_eq!(from_html_to_md(input), expected);
+    }
+
+    #[test]
+    fn subheader_in_header() {
+        let input = "<h1>## hello</h1>".to_string();
+        let expected "# ## hello\n".to_string();
+        assert_eq!(from_html_to_md(input), expected);
+    }
+
+    #[test]
+    fn header_in_subheader() {
+        let input = "<h2># hello</h2>".to_string();
+        let expected "## # hello\n".to_string();
+         assert_eq!(from_html_to_md(input), expected);
     }
 
     #[test]
