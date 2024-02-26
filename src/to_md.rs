@@ -59,11 +59,27 @@ pub fn to_md(node: Node) -> String {
                 }
                 tail.push_str("\n");
             }
+            Code => {
+                if let Some(language) = node
+                    .attributes
+                    .as_ref()
+                    .and_then(|attrs| attrs.get("class"))
+                    .unwrap_or(&"".to_string())
+                    .split_whitespace()
+                    .find(|class| class.starts_with("language-"))
+                    .map(|class| &class[9..])
+                {
+                    res.push_str(&format!("```{}\n", language));
+                } else {
+                    res.push_str("```\n");
+                }
+                tail.push_str("```\n");
+            }
             Text => {
                 res.push_str(&node.value.unwrap_or("".to_string()));
                 return res;
             }
-            _ => (),
+            Div | Pre => (),
         }
     }
 

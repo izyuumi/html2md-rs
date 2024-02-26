@@ -16,12 +16,14 @@ pub enum NodeType {
     Ul,
     Ol,
     Li,
+    Pre,
+    Code,
     Text,
 }
 
 impl NodeType {
     pub fn from_str(input: &str) -> NodeType {
-        match input {
+        match input.to_lowercase().as_str() {
             "h1" => NodeType::H1,
             "h2" => NodeType::H2,
             "h3" => NodeType::H3,
@@ -36,6 +38,8 @@ impl NodeType {
             "ul" => NodeType::Ul,
             "ol" => NodeType::Ol,
             "li" => NodeType::Li,
+            "pre" => NodeType::Pre,
+            "code" => NodeType::Code,
             _ => NodeType::Text,
         }
     }
