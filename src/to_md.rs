@@ -52,7 +52,7 @@ pub fn to_md(node: Node) -> String {
                 if node.children.len() == 0 {
                     return res;
                 }
-                tail.push_str("\n\n");
+                tail.push_str("\n");
             }
             Text => {
                 res.push_str(&node.value.unwrap_or("".to_string()));
