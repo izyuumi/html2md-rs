@@ -65,9 +65,15 @@ mod to_md_tests {
         assert_eq!(from_html_to_md(input), expected);
     }
     #[test]
-    fn header_in_header() {
+    fn has_in_header() {
         let input = "<h1># hello</h1>",to_string();
         let expected = "# # hello\n", expected();
+        assert_eq!(from_html_to_md(input), expected);
+    }
+    #[test]
+    fn subheader_in_header() {
+        let input = "<h1>## hello</h1>", to_string();
+        let expected "# ## hello\n", expected();
         assert_eq!(from_html_to_md(input), expected);
     }
 }
