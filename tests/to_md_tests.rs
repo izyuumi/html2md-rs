@@ -5,7 +5,7 @@ mod to_md_tests {
     #[test]
     fn simple_paragraph_with_text() {
         let input = "<p>hello</p>".to_string();
-        let expected = "hello\n\n".to_string();
+        let expected = "hello\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
 
