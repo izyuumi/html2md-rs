@@ -92,4 +92,11 @@ mod to_md_tests {
         let expected = "[hello](https://example.com)\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
+
+    #[test]
+    fn header_with_link() {
+        let input = "<h1><a href=\"https://example.com\">hello</a></h1>".to_string();
+        let expected = "# [hello](https://example.com)\n".to_string();
+        assert_eq!(from_html_to_md(input), expected);
+    }
 }
