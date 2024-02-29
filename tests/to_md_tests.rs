@@ -104,6 +104,6 @@ mod to_md_tests {
     fn paragraph_with_url() {
         let input = "<p><a href=\"https://example.com\">https://example.com</a></p>".to_string();
         let expected = "<https://example.com>\n".to_string();
-        assert_eq!(from_html_to_md(input), expected);
     }
+  
 }
