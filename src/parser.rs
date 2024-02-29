@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 pub fn parse_html(input: String) -> Node {
     let mut current_index = 0;
-    let mut nodes = vec![];
+    let mut nodes = Vec::new();
     let input = input.replace("\n", "");
     let mut stack: Vec<Node> = Vec::new();
 
@@ -93,7 +93,7 @@ pub fn parse_html(input: String) -> Node {
                     tag_name: Some(node_type),
                     value: None,
                     attributes: attribute_map,
-                    children: vec![],
+                    children: Vec::new(),
                 };
                 stack.push(node);
             }
@@ -111,7 +111,7 @@ pub fn parse_html(input: String) -> Node {
             tag_name: Some(Text),
             value: Some(text.to_string()),
             attributes: None,
-            children: vec![],
+            children: Vec::new(),
         });
         current_index += next_opening_tag;
     }
