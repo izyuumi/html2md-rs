@@ -113,7 +113,7 @@ mod to_md_tests {
         let expected = "# <https://example.com>\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
-
+  
     #[test]
     fn code_block() {
         let input = "<pre><code class=\"language-rust\">let x: i32 = 123;</code></pre>".to_string();
