@@ -120,4 +120,12 @@ mod to_md_tests {
         let expected = "```rust\nlet x: i32 = 123;```\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
+
+    #[test]
+    fn thematic_breaks() {
+        let input = "<hr />".to_string();
+        let expected = "***\n".to_string();
+        assert_eq!(from_html_to_md(input), expected);
+    }
+
 }
