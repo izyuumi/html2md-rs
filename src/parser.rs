@@ -4,7 +4,27 @@ use crate::structs::{
 };
 use std::{collections::HashMap, str::FromStr};
 
-pub fn parse_html(input: String) -> Node {
+#[derive(Debug, PartialEq, Eq)]
+pub enum MalformedTagError {
+    MissingClosingBracket(u32),
+    MissingTagName(u32),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum MalformedAttributeError {
+    MissingQuotationMark(u32),
+    MissingAttributeName(u32),
+    MissingAttributeValue(u32),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum ParseHTMLTypeError {
+    MalformedTag(String, MalformedTagError),
+    MalformedAttribute(String, MalformedAttributeError),
+    UnknownNodeType(String, u32),
+}
+
+pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
     let mut current_index = 0;
     let mut nodes = Vec::new();
     let input = input.replace('\n', "");
@@ -13,117 +33,99 @@ pub fn parse_html(input: String) -> Node {
     while current_index < input.len() {
         let rest = &input[current_index..];
         if rest.starts_with('<') {
-            let mut closing_index = rest.find('>').expect("malformed tag");
-            let self_closing = if rest.chars().nth(closing_index - 1) == Some('/') {
-                closing_index -= 1;
-                true
-            } else {
-                false
-            };
-
-            let tag_content = &rest[1..closing_index];
-
-            let node_name;
-            let mut attribute_map = None;
-            if let Some(space_index) = tag_content.find(' ') {
-                node_name = &tag_content[..space_index];
-                let attributes = &tag_content[space_index..];
-                attribute_map = Some(HashMap::new());
-                let mut in_quotes = false;
-                let mut current_key = String::new();
-                let mut current_value_in_quotes = String::new();
-                'attribute_loop: for attr in attributes.split_whitespace() {
-                    if attr.contains('=') {
-                        if attr.starts_with('=') || attr.ends_with('=') {
-                            panic!(
-                                "malformed html, attribute key missing. starting or ending with \"=\": {}",
-                                attr
-                            );
-                        }
-                        if let Some(key_value) = attr.split_once('=') {
-                            if key_value.1.starts_with('"') {
-                                if key_value.1.ends_with('"') {
-                                    attribute_map.as_mut().unwrap().insert(
-                                        key_value.0.to_string(),
-                                        key_value.1[1..key_value.1.len() - 1].to_string(),
-                                    );
-                                    continue 'attribute_loop;
-                                }
-                                in_quotes = true;
-                                (current_key, current_value_in_quotes) =
-                                    (key_value.0.to_string(), key_value.1[1..].to_string());
-                                continue 'attribute_loop;
-                            }
-                            attribute_map
-                                .as_mut()
-                                .unwrap()
-                                .insert(key_value.0.to_string(), key_value.1.to_string());
-                        }
-                        continue 'attribute_loop;
-                    }
-                    if !in_quotes {
-                        panic!("malformed html, attribute value missing: {}", attr);
-                    }
-                    if attr.contains('"') {
-                        if let Some(stripped) = attr.strip_suffix('"') {
-                            in_quotes = false;
-                            current_value_in_quotes.push_str(stripped);
-                            attribute_map
-                                .as_mut()
-                                .unwrap()
-                                .insert(current_key.clone(), current_value_in_quotes.clone());
-                            current_key.clear();
-                            current_value_in_quotes.clear();
-                            continue 'attribute_loop;
-                        }
-                        panic!("malformed html, attribute value contains quotes: {}", attr);
-                    }
-                }
-                if in_quotes {
-                    panic!("malformed html, missing closing quote for attribute value");
-                }
-            } else {
-                node_name = tag_content;
-            }
-
-            if rest.starts_with("</") {
-                let last_node = stack.pop().expect("malformed html");
-                if stack.is_empty() {
-                    nodes.push(last_node);
+            if let Some(mut closing_index) = rest.find('>') {
+                let self_closing = if rest.chars().nth(closing_index - 1) == Some('/') {
+                    closing_index -= 1;
+                    true
                 } else {
-                    let parent = stack.last_mut().unwrap();
-                    parent.children.push(last_node);
-                }
-                current_index += closing_index + 1;
-                continue;
-            }
+                    false
+                };
 
-            match NodeType::from_str(node_name) {
-                Ok(node_type) => {
-                    let node = Node {
-                        tag_name: Some(node_type),
-                        value: None,
-                        attributes: if attribute_map.clone().unwrap_or_default().is_empty() {
-                            None
-                        } else {
-                            attribute_map
-                        },
-                        children: Vec::new(),
-                    };
-                    if self_closing {
-                        if let Some(parent) = stack.last_mut() {
-                            parent.children.push(node);
-                        } else {
-                            nodes.push(node);
-                        }
-                        current_index += closing_index + 2;
-                    } else {
-                        stack.push(node);
-                        current_index += closing_index + 1;
+                let tag_content = &rest[1..closing_index];
+
+                let node_name;
+                let mut attribute_map = None;
+                if let Some(space_index) = tag_content.find(' ') {
+                    node_name = &tag_content[..space_index];
+                    let attributes = &tag_content[space_index..];
+                    match parse_tag_attributes(attributes, current_index) {
+                        Ok(map) => attribute_map = map,
+                        Err(err) => return Err(err),
                     }
-                    continue;
+                } else {
+                    node_name = tag_content;
                 }
-                Err(_) => panic!("unknown node type: {}", node_name),
+
+                if node_name.is_empty() {
+                    return Err(ParseHTMLTypeError::MalformedTag(
+                        tag_content.to_string(),
+                        MalformedTagError::MissingTagName(current_index as u32),
+                    ));
+                }
+
+                if rest.starts_with("</") {
+                    // if the tag is a closing tag, pop the last node from the stack and add it to the parent
+                    match stack.pop() {
+                        Some(last_node) => {
+                            if stack.is_empty() {
+                                // if the stack is empty, the last node is the root node
+                                nodes.push(last_node);
+                            } else {
+                                let parent = stack.last_mut().unwrap(); // stack is not empty, so unwrap is safe
+                                parent.children.push(last_node);
+                            }
+                            current_index += closing_index + 1;
+                            continue;
+                        }
+                        None => {
+                            // if there is nothing in the stack, the tag is malformed
+                            let closing_bracket_of_closing_tag = rest.find('>');
+                            return Err(ParseHTMLTypeError::MalformedTag(
+                                if let Some(index) = closing_bracket_of_closing_tag {
+                                    // if there is a closing bracket, return the tag with the error
+                                    rest[..index + 1].to_string()
+                                } else {
+                                    rest.to_string()
+                                },
+                                MalformedTagError::MissingClosingBracket(current_index as u32),
+                            ));
+                        }
+                    }
+                }
+
+                match NodeType::from_str(node_name) {
+                    Ok(node_type) => {
+                        let node = Node {
+                            tag_name: Some(node_type),
+                            value: None,
+                            attributes: attribute_map,
+                            children: Vec::new(),
+                        };
+                        if self_closing {
+                            if let Some(parent) = stack.last_mut() {
+                                parent.children.push(node);
+                            } else {
+                                nodes.push(node);
+                            }
+                            current_index += closing_index + 2;
+                        } else {
+                            stack.push(node);
+                            current_index += closing_index + 1;
+                        }
+                        continue;
+                    }
+                    Err(_) => {
+                        return Err(ParseHTMLTypeError::UnknownNodeType(
+                            node_name.to_string(),
+                            current_index as u32,
+                        ));
+                    }
+                }
+            } else {
+                return Err(ParseHTMLTypeError::MalformedTag(
+                    rest.to_string(),
+                    MalformedTagError::MissingClosingBracket(current_index as u32),
+                ));
             }
         }
         let next_opening_tag = rest.find('<').unwrap_or(rest.len());
@@ -154,13 +156,143 @@ pub fn parse_html(input: String) -> Node {
     }
 
     if nodes.len() == 1 {
-        return nodes.remove(0);
+        return Ok(nodes.remove(0));
     }
 
-    Node {
+    Ok(Node {
         tag_name: None,
         value: None,
         attributes: None,
         children: nodes,
+    })
+}
+
+pub fn parse_html(input: String) -> Node {
+    let parsed = safe_parse_html(input);
+    match parsed {
+        Ok(node) => node,
+        Err(err) => panic!("error parsing html: {:?}", err),
+    }
+}
+
+fn parse_tag_attributes(
+    tag_attributes: &str,
+    current_index: usize,
+) -> Result<Option<HashMap<String, String>>, ParseHTMLTypeError> {
+    // if the input is empty or only whitespace, return None
+    if tag_attributes.trim().is_empty() {
+        return Ok(None);
+    }
+
+    let mut attribute_map = HashMap::new();
+
+    let mut current_key = String::new();
+    let mut current_value_in_quotes = String::new();
+    let mut in_quotes = false;
+
+    // loop through each string split by whitespace
+    for attr in tag_attributes.split_whitespace() {
+        // if the attribute contains an equals sign, it's a key-value pair
+        if attr.contains('=') {
+            // if the attribute starts with an equals sign, it's malformed
+            if attr.starts_with('=') {
+                return Err(ParseHTMLTypeError::MalformedAttribute(
+                    attr.to_string(),
+                    MalformedAttributeError::MissingAttributeName(current_index as u32),
+                ));
+            }
+            //
+            // if the attribute ends with an equals sign, it's malformed
+            if attr.ends_with('=') {
+                return Err(ParseHTMLTypeError::MalformedAttribute(
+                    attr.to_string(),
+                    MalformedAttributeError::MissingAttributeValue(current_index as u32),
+                ));
+            }
+
+            // if the attribute has an equal sign, split attribute into key and value
+            if let Some((key, value)) = attr.split_once('=') {
+                // if the value does
+                if !value.starts_with('"') {
+                    return Err(ParseHTMLTypeError::MalformedAttribute(
+                        value.to_string(),
+                        MalformedAttributeError::MissingQuotationMark(current_index as u32),
+                    ));
+                }
+
+                // if the value ends with a quote, the value is in quotes, so add it to the map
+                if value.ends_with('"') {
+                    let value = value.strip_prefix('"').unwrap();
+                    let value = value.strip_suffix('"').unwrap();
+                    attribute_map.insert(key.to_string(), value.to_string());
+                    continue;
+                }
+
+                // if we are already in quotes, attribute shouldn't start with quotes
+                if in_quotes {
+                    return Err(ParseHTMLTypeError::MalformedAttribute(
+                        current_value_in_quotes,
+                        MalformedAttributeError::MissingQuotationMark(current_index as u32),
+                    ));
+                }
+
+                // if reached this point, the value is not in quotes, so set the current key and value
+                current_key = key.to_string();
+                in_quotes = true;
+                current_value_in_quotes = value[1..].to_string(); // ignore the opening quote
+                continue;
+            }
+            unreachable!() // since this scope is only entered if the attribute contains an equals sign, this is unreachable
+        }
+
+        // if the attribute doesn't contain an equals sign, we are in a quote
+        // if not, the attribute is malformed
+        if !in_quotes {
+            return Err(ParseHTMLTypeError::MalformedAttribute(
+                attr.to_string(),
+                MalformedAttributeError::MissingQuotationMark(current_index as u32),
+            ));
+        }
+
+        // if the attribute contains a quote, it should be at the end of the attribute
+        if attr.contains('"') {
+            match attr.strip_prefix('"') {
+                // if the attribute ends with a quote, add the current key and value (with the stripped content) to the map
+                Some(stripped) => {
+                    in_quotes = false;
+                    current_value_in_quotes.push(' ');
+                    current_value_in_quotes.push_str(stripped);
+                    attribute_map.insert(current_key.clone(), current_value_in_quotes.clone());
+                    current_key.clear();
+                    current_value_in_quotes.clear();
+                    continue;
+                }
+                // if the attribute doesn't end with a quote, it's malformed
+                None => {
+                    return Err(ParseHTMLTypeError::MalformedAttribute(
+                        attr.to_string(),
+                        MalformedAttributeError::MissingQuotationMark(current_index as u32),
+                    ));
+                }
+            }
+        }
+
+        // if the attribute doesn't contain an equals sign or a quote, add the attribute to the current value
+        current_value_in_quotes.push(' ');
+        current_value_in_quotes.push_str(attr);
+    }
+
+    // if we are still in quotes, the attribute is malformed
+    if in_quotes {
+        return Err(ParseHTMLTypeError::MalformedAttribute(
+            current_value_in_quotes,
+            MalformedAttributeError::MissingQuotationMark(current_index as u32),
+        ));
+    }
+
+    // if not, return the attribute map
+    match attribute_map.is_empty() {
+        true => Ok(None),
+        false => Ok(Some(attribute_map)),
     }
 }
