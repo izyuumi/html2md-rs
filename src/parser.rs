@@ -2,12 +2,12 @@ use crate::structs::{
     Node,
     NodeType::{self, *},
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 pub fn parse_html(input: String) -> Node {
     let mut current_index = 0;
     let mut nodes = Vec::new();
-    let input = input.replace("\n", "");
+    let input = input.replace('\n', "");
     let mut stack: Vec<Node> = Vec::new();
 
     while current_index < input.len() {
@@ -65,9 +65,9 @@ pub fn parse_html(input: String) -> Node {
                         panic!("malformed html, attribute value missing: {}", attr);
                     }
                     if attr.contains('"') {
-                        if attr.ends_with('"') {
+                        if let Some(stripped) = attr.strip_suffix('"') {
                             in_quotes = false;
-                            current_value_in_quotes.push_str(&attr[..attr.len() - 1]);
+                            current_value_in_quotes.push_str(stripped);
                             attribute_map
                                 .as_mut()
                                 .unwrap()
@@ -86,51 +86,55 @@ pub fn parse_html(input: String) -> Node {
                 node_name = tag_content;
             }
 
-            let node_type = NodeType::from_str(node_name);
-            if rest.starts_with("</") {
-                let last_node = stack.pop().expect("malformed html");
-                if stack.is_empty() {
-                    nodes.push(last_node);
-                } else {
-                    let parent = stack.last_mut().unwrap();
-                    parent.children.push(last_node);
-                }
-            } else if self_closing {
-                let node = Node {
-                    tag_name: Some(node_type),
-                    value: None,
-                    attributes: if attribute_map.clone().unwrap_or_default().is_empty() {
-                        None
+            match NodeType::from_str(node_name) {
+                Ok(node_type) => {
+                    if rest.starts_with("</") {
+                        let last_node = stack.pop().expect("malformed html");
+                        if stack.is_empty() {
+                            nodes.push(last_node);
+                        } else {
+                            let parent = stack.last_mut().unwrap();
+                            parent.children.push(last_node);
+                        }
+                    } else if self_closing {
+                        let node = Node {
+                            tag_name: Some(node_type),
+                            value: None,
+                            attributes: if attribute_map.clone().unwrap_or_default().is_empty() {
+                                None
+                            } else {
+                                attribute_map
+                            },
+                            children: Vec::new(),
+                        };
+                        if let Some(parent) = stack.last_mut() {
+                            parent.children.push(node);
+                        } else {
+                            nodes.push(node);
+                        }
+                        current_index += closing_index + 2;
                     } else {
-                        attribute_map
-                    },
-                    children: Vec::new(),
-                };
-                if let Some(parent) = stack.last_mut() {
-                    parent.children.push(node);
-                } else {
-                    nodes.push(node);
+                        let node = Node {
+                            tag_name: Some(node_type),
+                            value: None,
+                            attributes: if attribute_map.clone().unwrap_or_default().is_empty() {
+                                None
+                            } else {
+                                attribute_map
+                            },
+                            children: Vec::new(),
+                        };
+                        stack.push(node);
+                    }
+                    current_index += closing_index + 1;
+                    continue;
                 }
-                current_index += closing_index + 2;
-            } else {
-                let node = Node {
-                    tag_name: Some(node_type),
-                    value: None,
-                    attributes: if attribute_map.clone().unwrap_or_default().is_empty() {
-                        None
-                    } else {
-                        attribute_map
-                    },
-                    children: Vec::new(),
-                };
-                stack.push(node);
+                Err(_) => panic!("unknown node type: {}", node_name),
             }
-            current_index += closing_index + 1;
-            continue;
         }
         let next_opening_tag = rest.find('<').unwrap_or(rest.len());
         let text = &rest[..next_opening_tag];
-        if text.trim().len() == 0 {
+        if text.trim().is_empty() {
             current_index += next_opening_tag;
             continue;
         }
