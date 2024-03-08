@@ -86,27 +86,31 @@ pub fn parse_html(input: String) -> Node {
                 node_name = tag_content;
             }
 
+            if rest.starts_with("</") {
+                let last_node = stack.pop().expect("malformed html");
+                if stack.is_empty() {
+                    nodes.push(last_node);
+                } else {
+                    let parent = stack.last_mut().unwrap();
+                    parent.children.push(last_node);
+                }
+                current_index += closing_index + 1;
+                continue;
+            }
+
             match NodeType::from_str(node_name) {
                 Ok(node_type) => {
-                    if rest.starts_with("</") {
-                        let last_node = stack.pop().expect("malformed html");
-                        if stack.is_empty() {
-                            nodes.push(last_node);
+                    let node = Node {
+                        tag_name: Some(node_type),
+                        value: None,
+                        attributes: if attribute_map.clone().unwrap_or_default().is_empty() {
+                            None
                         } else {
-                            let parent = stack.last_mut().unwrap();
-                            parent.children.push(last_node);
-                        }
-                    } else if self_closing {
-                        let node = Node {
-                            tag_name: Some(node_type),
-                            value: None,
-                            attributes: if attribute_map.clone().unwrap_or_default().is_empty() {
-                                None
-                            } else {
-                                attribute_map
-                            },
-                            children: Vec::new(),
-                        };
+                            attribute_map
+                        },
+                        children: Vec::new(),
+                    };
+                    if self_closing {
                         if let Some(parent) = stack.last_mut() {
                             parent.children.push(node);
                         } else {
@@ -114,19 +118,9 @@ pub fn parse_html(input: String) -> Node {
                         }
                         current_index += closing_index + 2;
                     } else {
-                        let node = Node {
-                            tag_name: Some(node_type),
-                            value: None,
-                            attributes: if attribute_map.clone().unwrap_or_default().is_empty() {
-                                None
-                            } else {
-                                attribute_map
-                            },
-                            children: Vec::new(),
-                        };
                         stack.push(node);
+                        current_index += closing_index + 1;
                     }
-                    current_index += closing_index + 1;
                     continue;
                 }
                 Err(_) => panic!("unknown node type: {}", node_name),
