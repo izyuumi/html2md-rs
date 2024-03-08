@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.0](https://github.com/izyuumi/html2md-rs/compare/v0.2.0...v0.3.0) (2024-03-08)
+
+
+### Features
+
+* **ci:** add crates release to release workflow ([a77f946](https://github.com/izyuumi/html2md-rs/commit/a77f9464e0050e0ffe0e8e1f2704f94e3067f02a))
+* **parser:** handle parsing errors ([fcb54e4](https://github.com/izyuumi/html2md-rs/commit/fcb54e4281b1a24592838f0b54717cb88bb4ba4b))
+
 ## [0.2.0](https://github.com/izyuumi/html2md-rs/compare/v0.1.8...v0.2.0) (2024-03-08)
 
 
