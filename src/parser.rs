@@ -24,6 +24,39 @@ pub enum ParseHTMLTypeError {
     UnknownNodeType(String, u32),
 }
 
+/// Safely parses a string of HTML into a Node struct
+///
+/// # Arguments
+///
+/// * `input` - A string slice that holds the HTML to be parsed
+///
+/// # Examples
+///
+/// ```
+/// use html2md_rs::{
+///     parser::safe_parse_html,
+///     structs::{
+///         Node,
+///         NodeType::{Div, Text},
+///     },
+/// };
+///
+/// let input = "<div>hello</div>".to_string();
+/// let parsed = safe_parse_html(input);
+/// let expected = Node {
+///     tag_name: Some(Div),
+///     value: None,
+///     attributes: None,
+///     children: vec![Node {
+///         tag_name: Some(Text),
+///         value: Some("hello".to_string()),
+///         attributes: None,
+///         children: Vec::new(),
+///     }],
+/// };
+///
+/// assert_eq!(parsed, Ok(expected));
+/// ```
 pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
     let mut current_index = 0;
     let mut nodes = Vec::new();
@@ -167,6 +200,41 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
     })
 }
 
+/// Parses a string of HTML into a Node struct
+///
+/// Panics if the input is malformed
+///
+/// # Arguments
+///
+/// * `input` - A string slice that holds the HTML to be parsed
+///
+/// # Examples
+///
+/// ```
+/// use html2md_rs::{
+///     parser::parse_html,
+///     structs::{
+///         Node,
+///         NodeType::{Div, Text},
+///     },
+/// };
+///
+/// let input = "<div>hello</div>".to_string();
+/// let parsed = parse_html(input);
+/// let expected = Node {
+///     tag_name: Some(Div),
+///     value: None,
+///     attributes: None,
+///     children: vec![Node {
+///         tag_name: Some(Text),
+///         value: Some("hello".to_string()),
+///         attributes: None,
+///         children: Vec::new(),
+///     }],
+/// };
+///
+/// assert_eq!(parsed, expected);
+/// ```
 pub fn parse_html(input: String) -> Node {
     let parsed = safe_parse_html(input);
     match parsed {

@@ -3,6 +3,38 @@ use crate::{
     structs::{Node, NodeType::*},
 };
 
+/// Converts a Node to a markdown string.
+///
+/// # Arguments
+///
+/// * `node` - A Node to be converted to markdown.
+///
+/// # Examples
+///
+/// ```
+/// use html2md_rs::{
+///     to_md::to_md,
+///     structs::{
+///         Node,
+///         NodeType::{H1, Text},
+///     },
+/// };
+///
+/// let input = Node {
+///     tag_name: Some(H1),
+///     value: None,
+///     attributes: None,
+///     children: vec![Node {
+///         tag_name: Some(Text),
+///         value: Some("Hello world".to_string()),
+///         attributes: None,
+///         children: Vec::new(),
+///     }],
+/// };
+/// let parsed = to_md(input);
+///
+/// assert_eq!(parsed, "# Hello world\n");
+/// ```
 pub fn to_md(node: Node) -> String {
     let mut res = String::new();
     let mut tail = String::new();
@@ -102,10 +134,46 @@ pub fn to_md(node: Node) -> String {
     res
 }
 
+/// Converts a string of HTML to a markdown string.
+///
+/// Panics if the HTML is invalid.
+///
+/// # Arguments
+///
+/// * `input` - A string of HTML to be converted to markdown.
+///
+/// # Examples
+///
+/// ```
+/// use html2md_rs::to_md::from_html_to_md;
+///
+/// let input = "<h1>Hello world</h1>".to_string();
+/// let parsed = from_html_to_md(input);
+///
+/// assert_eq!(parsed, "# Hello world\n");
+/// ```
 pub fn from_html_to_md(input: String) -> String {
     to_md(crate::parser::parse_html(input))
 }
 
+/// Safely converts a string of HTML to a markdown string.
+///
+/// Returns an error if the HTML is invalid.
+///
+/// # Arguments
+///
+/// * `input` - A string of HTML to be converted to markdown.
+///
+/// # Examples
+///
+/// ```
+/// use html2md_rs::to_md::safe_from_html_to_md;
+///
+/// let input = "<h1>Hello world</h1>".to_string();
+/// let parsed = safe_from_html_to_md(input);
+///
+/// assert_eq!(parsed, Ok("# Hello world\n".to_string()));
+/// ```
 pub fn safe_from_html_to_md(input: String) -> Result<String, ParseHTMLTypeError> {
     crate::parser::safe_parse_html(input).map(to_md)
 }
