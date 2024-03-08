@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/izyuumi/html2md-rs/compare/v0.3.0...v0.4.0) (2024-03-08)
+
+
+### Features
+
+* **to_md:** add safe_from_html_to_md ([2813fef](https://github.com/izyuumi/html2md-rs/commit/2813fef7254f1d7d83a8da58249c4016de6539cb))
+
 ## [0.3.0](https://github.com/izyuumi/html2md-rs/compare/v0.2.0...v0.3.0) (2024-03-08)
 
 
