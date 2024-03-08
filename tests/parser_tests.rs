@@ -2,7 +2,10 @@
 
 mod parser_tests {
     use html2md_rs::{
-        parser::*,
+        parser::{
+            parse_html, safe_parse_html, MalformedAttributeError, MalformedTagError,
+            ParseHTMLTypeError,
+        },
         structs::{Node, NodeType::*},
     };
 
@@ -170,5 +173,41 @@ mod parser_tests {
             ],
         };
         assert_eq!(parse_html(input), expected);
+    }
+
+    #[test]
+    fn missing_closing_bracket() {
+        let input = "<div>hello</div><div".to_string();
+        assert_eq!(
+            safe_parse_html(input),
+            Err(ParseHTMLTypeError::MalformedTag(
+                "<div".to_string(),
+                MalformedTagError::MissingClosingBracket(16)
+            ))
+        );
+    }
+
+    #[test]
+    fn missing_tag_name() {
+        let input = "<>".to_string();
+        assert_eq!(
+            safe_parse_html(input),
+            Err(ParseHTMLTypeError::MalformedTag(
+                "".to_string(),
+                MalformedTagError::MissingTagName(0)
+            ))
+        );
+    }
+
+    #[test]
+    fn missing_quotation_mark() {
+        let input = "<div><div class=hello></div></div>".to_string();
+        assert_eq!(
+            safe_parse_html(input),
+            Err(ParseHTMLTypeError::MalformedAttribute(
+                "hello".to_string(),
+                MalformedAttributeError::MissingQuotationMark(5)
+            ))
+        );
     }
 }
