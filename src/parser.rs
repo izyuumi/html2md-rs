@@ -13,7 +13,14 @@ pub fn parse_html(input: String) -> Node {
     while current_index < input.len() {
         let rest = &input[current_index..];
         if rest.starts_with('<') {
-            let closing_index = rest.find('>').expect("malformed tag");
+            let mut closing_index = rest.find('>').expect("malformed tag");
+            let self_closing = if rest.chars().nth(closing_index - 1) == Some('/') {
+                closing_index -= 1;
+                true
+            } else {
+                false
+            };
+
             let tag_content = &rest[1..closing_index];
 
             let node_name;
@@ -88,11 +95,32 @@ pub fn parse_html(input: String) -> Node {
                     let parent = stack.last_mut().unwrap();
                     parent.children.push(last_node);
                 }
+            } else if self_closing {
+                let node = Node {
+                    tag_name: Some(node_type),
+                    value: None,
+                    attributes: if attribute_map.clone().unwrap_or_default().is_empty() {
+                        None
+                    } else {
+                        attribute_map
+                    },
+                    children: Vec::new(),
+                };
+                if let Some(parent) = stack.last_mut() {
+                    parent.children.push(node);
+                } else {
+                    nodes.push(node);
+                }
+                current_index += closing_index + 2;
             } else {
                 let node = Node {
                     tag_name: Some(node_type),
                     value: None,
-                    attributes: attribute_map,
+                    attributes: if attribute_map.clone().unwrap_or_default().is_empty() {
+                        None
+                    } else {
+                        attribute_map
+                    },
                     children: Vec::new(),
                 };
                 stack.push(node);
@@ -100,19 +128,30 @@ pub fn parse_html(input: String) -> Node {
             current_index += closing_index + 1;
             continue;
         }
-        let next_opening_tag = rest.find('<').unwrap_or(input.len());
+        let next_opening_tag = rest.find('<').unwrap_or(rest.len());
         let text = &rest[..next_opening_tag];
         if text.trim().len() == 0 {
             current_index += next_opening_tag;
             continue;
         }
-        let parent = stack.last_mut().unwrap();
-        parent.children.push(Node {
-            tag_name: Some(Text),
-            value: Some(text.to_string()),
-            attributes: None,
-            children: Vec::new(),
-        });
+        match stack.last_mut() {
+            Some(parent) => {
+                parent.children.push(Node {
+                    tag_name: Some(Text),
+                    value: Some(text.to_string()),
+                    attributes: None,
+                    children: Vec::new(),
+                });
+            }
+            None => {
+                nodes.push(Node {
+                    tag_name: Some(Text),
+                    value: Some(text.to_string()),
+                    attributes: None,
+                    children: Vec::new(),
+                });
+            }
+        }
         current_index += next_opening_tag;
     }
 

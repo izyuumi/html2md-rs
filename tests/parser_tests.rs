@@ -127,4 +127,48 @@ mod parser_tests {
         };
         assert_eq!(parse_html(input), expected);
     }
+
+    #[test]
+    fn self_closing_div() {
+        let input = "<div />".to_string();
+        let expected = Node {
+            tag_name: Some(Div),
+            value: None,
+            attributes: None,
+            children: vec![],
+        };
+        assert_eq!(parse_html(input), expected);
+    }
+
+    #[test]
+    fn with_self_closing_div() {
+        let input = "<div>hello</div>
+<div />"
+            .to_string();
+        let expected = Node {
+            tag_name: None,
+            value: None,
+            attributes: None,
+            children: vec![
+                Node {
+                    tag_name: Some(Div),
+                    value: None,
+                    attributes: None,
+                    children: vec![Node {
+                        tag_name: Some(Text),
+                        value: Some("hello".to_string()),
+                        attributes: None,
+                        children: vec![],
+                    }],
+                },
+                Node {
+                    tag_name: Some(Div),
+                    value: None,
+                    attributes: None,
+                    children: vec![],
+                },
+            ],
+        };
+        assert_eq!(parse_html(input), expected);
+    }
 }
