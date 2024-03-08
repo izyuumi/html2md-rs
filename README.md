@@ -17,6 +17,10 @@ fn main() {
 }
 ```
 
+## Markdown Convention
+
+There are many markdown conventions/standards out there. This project references the [CommonMark Spec](https://spec.commonmark.org/0.31.2/).
+
 ## Supported HTML tags
 
 Check the supported HTML tags [here](./src/structs.rs).
