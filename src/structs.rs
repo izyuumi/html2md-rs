@@ -18,6 +18,7 @@ pub enum NodeType {
     Li,
     Pre,
     Code,
+    Hr,
     Text,
 }
 
@@ -40,6 +41,7 @@ impl NodeType {
             "li" => NodeType::Li,
             "pre" => NodeType::Pre,
             "code" => NodeType::Code,
+            "hr" => NodeType::Hr,
             _ => NodeType::Text,
         }
     }

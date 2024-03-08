@@ -3,7 +3,8 @@ use crate::structs::{Node, NodeType::*};
 pub fn to_md(node: Node) -> String {
     let mut res = String::new();
     let mut tail = String::new();
-    let mut follow_child = true;
+
+    let mut follow_child = true; // If the function should process the children of the node, defaults to true. False for some tags; like <ul> and <ol>.
 
     if let Some(tag_type) = node.tag_name {
         match tag_type {
@@ -74,6 +75,10 @@ pub fn to_md(node: Node) -> String {
                     res.push_str("```\n");
                 }
                 tail.push_str("```\n");
+            }
+            Hr => {
+                res.push_str("***\n");
+                follow_child = false;
             }
             Text => {
                 res.push_str(&node.value.unwrap_or("".to_string()));
