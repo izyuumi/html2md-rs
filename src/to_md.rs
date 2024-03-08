@@ -3,11 +3,12 @@ use crate::structs::{Node, NodeType::*};
 pub fn to_md(node: Node) -> String {
     let mut res = String::new();
     let mut tail = String::new();
-    let mut follow_child = true;
+
+    let mut follow_child = true; // If the function should process the children of the node, defaults to true. False for some tags; like <ul> and <ol>.
 
     if let Some(tag_type) = node.tag_name {
         match tag_type {
-            H1 | H2 | H3 | H4 | H5 | H6 => tail.push_str("\n"),
+            H1 | H2 | H3 | H4 | H5 | H6 => tail.push('\n'),
             _ => (),
         }
         match tag_type {
@@ -22,16 +23,16 @@ pub fn to_md(node: Node) -> String {
                 tail.push_str("**");
             }
             Em => {
-                res.push_str("*");
-                tail.push_str("*");
+                res.push('*');
+                tail.push('*');
             }
             A => {
                 if let Some(link) = node.attributes.as_ref().and_then(|attrs| attrs.get("href")) {
-                    res.push_str("[");
+                    res.push('[');
                     tail.push_str(&format!("]({})", link));
                 } else {
-                    res.push_str("[");
-                    tail.push_str("]");
+                    res.push('[');
+                    tail.push(']');
                 }
             }
             Ul => {
@@ -51,13 +52,13 @@ pub fn to_md(node: Node) -> String {
                 follow_child = false;
             }
             Li => {
-                tail.push_str("\n");
+                tail.push('\n');
             }
             P => {
-                if node.children.len() == 0 {
+                if node.children.is_empty() {
                     return res;
                 }
-                tail.push_str("\n");
+                tail.push('\n');
             }
             Code => {
                 if let Some(language) = node
@@ -74,6 +75,10 @@ pub fn to_md(node: Node) -> String {
                     res.push_str("```\n");
                 }
                 tail.push_str("```\n");
+            }
+            Hr => {
+                res.push_str("***\n");
+                follow_child = false;
             }
             Text => {
                 res.push_str(&node.value.unwrap_or("".to_string()));
