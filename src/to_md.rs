@@ -1,4 +1,7 @@
-use crate::structs::{Node, NodeType::*};
+use crate::{
+    parser::ParseHTMLTypeError,
+    structs::{Node, NodeType::*},
+};
 
 pub fn to_md(node: Node) -> String {
     let mut res = String::new();
@@ -100,6 +103,9 @@ pub fn to_md(node: Node) -> String {
 }
 
 pub fn from_html_to_md(input: String) -> String {
-    let node = crate::parser::parse_html(input);
-    to_md(node)
+    to_md(crate::parser::parse_html(input))
+}
+
+pub fn safe_from_html_to_md(input: String) -> Result<String, ParseHTMLTypeError> {
+    crate::parser::safe_parse_html(input).map(to_md)
 }
