@@ -78,4 +78,11 @@ mod to_md_tests {
         let expected = "```rust\nlet x: i32 = 123;```\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
+
+    #[test]
+    fn line_break() {
+        let input = "<p>hello<br />world</p>".to_string();
+        let expected = "hello  \nworld\n".to_string();
+        assert_eq!(from_html_to_md(input), expected);
+    }
 }

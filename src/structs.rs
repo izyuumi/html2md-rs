@@ -19,6 +19,7 @@ pub enum NodeType {
     Pre,
     Code,
     Hr,
+    Br,
     Text,
 }
 
@@ -48,6 +49,7 @@ impl FromStr for NodeType {
             "pre" => Pre,
             "code" => Code,
             "hr" => Hr,
+            "br" => Br,
             _ => return Err(ParseNodeTypeError),
         };
         Ok(node_type)

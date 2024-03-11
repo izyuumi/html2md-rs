@@ -115,6 +115,10 @@ pub fn to_md(node: Node) -> String {
                 res.push_str("***\n");
                 follow_child = false;
             }
+            Br => {
+                res.push_str("  \n");
+                follow_child = false;
+            }
             Text => {
                 res.push_str(&node.value.unwrap_or("".to_string()));
                 return res;
