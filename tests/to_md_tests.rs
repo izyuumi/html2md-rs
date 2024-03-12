@@ -74,8 +74,20 @@ mod to_md_tests {
 
     #[test]
     fn code_block() {
-        let input = "<pre><code class=\"language-rust\">let x: i32 = 123;</code></pre>".to_string();
-        let expected = "```rust\nlet x: i32 = 123;```\n".to_string();
+        let input = "<pre><code class=\"language-rust\">
+let x: i32 = 123;
+let y: i32 = 456;
+let z = x + y;
+println!(\"{}\", z);
+</code></pre>"
+            .to_string();
+        let expected = "```rust
+let x: i32 = 123;
+let y: i32 = 456;
+let z = x + y;
+println!(\"{}\", z);
+```\n"
+            .to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
 

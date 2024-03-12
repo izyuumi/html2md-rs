@@ -60,7 +60,6 @@ pub enum ParseHTMLTypeError {
 pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
     let mut current_index = 0;
     let mut nodes = Vec::new();
-    let input = input.replace('\n', "");
     let mut stack: Vec<Node> = Vec::new();
 
     while current_index < input.len() {

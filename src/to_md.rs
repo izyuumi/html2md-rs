@@ -105,7 +105,7 @@ pub fn to_md(node: Node) -> String {
                     .find(|class| class.starts_with("language-"))
                     .map(|class| &class[9..])
                 {
-                    res.push_str(&format!("```{}\n", language));
+                    res.push_str(&format!("```{}", language));
                 } else {
                     res.push_str("```\n");
                 }
