@@ -105,37 +105,53 @@ impl Display for ParseHTMLTypeError {
 /// assert_eq!(parsed, Ok(expected));
 /// ```
 pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
+    // current_index is the index of the current character being processed
     let mut current_index = 0;
+    // nodes is a vector of nodes that will be returned as an attribute of the resulting node
     let mut nodes = Vec::new();
+    // stack is a LIFO stack of nodes that are being processed
     let mut stack: Vec<Node> = Vec::new();
 
     while current_index < input.len() {
         let rest = &input[current_index..];
         if rest.starts_with('<') {
             if let Some(mut closing_index) = rest.find('>') {
+                // if the tag is a self-closing tag (i.e. <tag_name ... />)
                 let self_closing = if rest.chars().nth(closing_index - 1) == Some('/') {
+                    // if the last character right before the closing bracket is a forward slash, the tag is self-closing
+                    // closing_index is the index of the closing bracket, so decrement it to ignore the forward slash
                     closing_index -= 1;
                     true
                 } else {
+                    // if the last character right before the closing bracket is not a forward slash, the tag is not self-closing
                     false
                 };
 
+                // the tag content is the string between the opening and closing brackets
                 let tag_content = &rest[1..closing_index];
 
+                // initialize the node name and attribute map
                 let node_name;
                 let mut attribute_map = None;
                 if let Some(space_index) = tag_content.find(' ') {
+                    // if the tag contains a space, split the tag into the node name and attributes
+                    // space_index is the index of the first spce
+                    // node_name is the tag name (i.e. <tag_name ...>)
                     node_name = &tag_content[..space_index];
+                    // attributes is the string after the first space before the closing bracket
                     let attributes = &tag_content[space_index..];
+                    // parse the attribute string into a map
                     match parse_tag_attributes(attributes, current_index) {
                         Ok(map) => attribute_map = map,
                         Err(err) => return Err(err),
                     }
                 } else {
+                    // if the tag doesn't contain a space, the tag is the node name
                     node_name = tag_content;
                 }
 
                 if node_name.is_empty() {
+                    // if the tag name is empty, the tag is malformed
                     return Err(ParseHTMLTypeError::MalformedTag(
                         tag_content.to_string(),
                         MalformedTagError::MissingTagName(current_index as u32),
@@ -172,96 +188,75 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
                     }
                 }
 
+                // parse thae tag name into a NodeType from the node_name string
                 let node_type = NodeType::from_str(node_name);
 
-                let mut node = Node {
+                // initialize a new node with the tag name and attribute map
+                let mut new_node = Node {
                     tag_name: Some(node_type.clone()),
                     value: None,
                     attributes: attribute_map,
                     within_special_tag: None,
                     children: Vec::new(),
                 };
+
                 if self_closing {
+                    // if the tag is self-closing, add the node to the parent
+                    // if a parent does not exist, add the node to the nodes vector
                     if let Some(parent) = stack.last_mut() {
-                        node.within_special_tag = parent.within_special_tag.clone();
-                        if let Some(parent_tag_name) = &parent.tag_name {
-                            if parent_tag_name.is_special_tag() {
-                                if let Some(within_special_tag) = &mut node.within_special_tag {
-                                    within_special_tag.push(parent_tag_name.clone());
-                                } else {
-                                    node.within_special_tag = Some(vec![parent_tag_name.clone()]);
-                                }
-                            }
-                        }
-                        parent.children.push(node);
+                        modify_node_with_parent(&mut new_node, parent);
+                        parent.children.push(new_node);
                     } else {
-                        nodes.push(node);
+                        nodes.push(new_node);
                     }
+                    // because the tag is self-closing, increment the current_index by the closing_index + 2
+                    // and continute to the next iteration
                     current_index += closing_index + 2;
                     continue;
                 }
+                // if the tag is not self-closing
+                // add the new_node to the stack
                 if let Some(parent) = stack.last_mut() {
-                    node.within_special_tag = parent.within_special_tag.clone();
-                    if let Some(parent_tag_name) = &parent.tag_name {
-                        if parent_tag_name.is_special_tag() {
-                            if let Some(within_special_tag) = &mut node.within_special_tag {
-                                within_special_tag.push(parent_tag_name.clone());
-                            } else {
-                                node.within_special_tag = Some(vec![parent_tag_name.clone()]);
-                            }
-                        }
-                    }
-                    stack.push(node);
-                    current_index += closing_index + 1;
-                    continue;
+                    modify_node_with_parent(&mut new_node, parent);
                 }
-                stack.push(node);
+                stack.push(new_node);
+                // because the tag is not self-closing, increment the current_index by the closing_index + 1
                 current_index += closing_index + 1;
                 continue;
             } else {
+                // if a closing bracket is not found, the tag is malformed
                 return Err(ParseHTMLTypeError::MalformedTag(
                     rest.to_string(),
                     MalformedTagError::MissingClosingBracket(current_index as u32),
                 ));
             }
         }
+
+        // if the current character is not a '<', it's just a text
+        // if an opening bracket is not found, the rest is the content of the text
+        // else, anything upto the opening bracket is the content of the text
         let next_opening_tag = rest.find('<').unwrap_or(rest.len());
         let text = &rest[..next_opening_tag];
         if text.trim().is_empty() {
+            // if text is empty or only whitespace, ignore it
+            // increment the current_index by next_opening_tag and continue to the next iteration
             current_index += next_opening_tag;
             continue;
         }
-        match stack.last_mut() {
-            Some(parent) => {
-                let mut within_special_tag = parent.within_special_tag.clone();
-                if let Some(parent_tag_name) = &parent.tag_name {
-                    if parent_tag_name.is_special_tag() {
-                        if let Some(within_special_tag) = &mut within_special_tag {
-                            within_special_tag.push(parent_tag_name.clone());
-                        } else {
-                            within_special_tag = Some(vec![parent_tag_name.clone()]);
-                        }
-                    }
-                }
-                parent.children.push(Node {
-                    tag_name: Some(Text),
-                    value: Some(text.to_string()),
-                    attributes: None,
-                    within_special_tag,
-                    children: Vec::new(),
-                });
-            }
-            None => {
-                nodes.push(Node {
-                    tag_name: Some(Text),
-                    value: Some(text.to_string()),
-                    attributes: None,
-                    within_special_tag: None,
-                    children: Vec::new(),
-                });
-            }
-        }
-        current_index += next_opening_tag;
+
+        // initialize new_node as text with the content of the text
+        let new_node = Node {
+            tag_name: Some(Text),
+            value: Some(text.to_string()),
+            attributes: None,
+            within_special_tag: None,
+            children: Vec::new(),
+        };
+
+        // add the new_node to the stack
+        modify_stack_with_node(&mut stack, new_node);
+
+        current_index += next_opening_tag
     }
 
     if nodes.len() == 1 {
@@ -275,6 +270,47 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
         within_special_tag: None,
         children: nodes,
     })
+}
+
+/// Adds a new node to the stack with respect to the parent node's special tag and tag type
+///
+/// # Arguments
+///
+/// * `stack` - A mutable reference to a vector of nodes
+/// * `new_node` - A mutable reference to a node to be added to the stack
+fn modify_stack_with_node(stack: &mut Vec<Node>, mut new_node: Node) {
+    if let Some(parent) = stack.last_mut() {
+        // if the stack is not empty, add new_node to the parent
+        // modify the new_node with the parent's within_special_tag and tag type
+        modify_node_with_parent(&mut new_node, parent);
+        parent.children.push(new_node.clone());
+        println!("parent: {:#?}", parent);
+        println!("{:#?}", stack);
+        return;
+    }
+    // if stack is empty, add new_node to the stack
+    stack.push(new_node.clone());
+}
+
+/// Modifies a node with the parent's within_special_tag and tag type
+///
+/// # Arguments
+///
+/// * `node` - A mutable reference to a Node to be modified
+/// * `parent` - A reference to the parent Node
+fn modify_node_with_parent(node: &mut Node, parent: &Node) {
+    if parent.within_special_tag.is_some() {
+        node.within_special_tag = parent.within_special_tag.clone();
+    }
+    if let Some(parent_tag_name) = &parent.tag_name {
+        if parent_tag_name.is_special_tag() {
+            if let Some(within_special_tag) = &mut node.within_special_tag {
+                within_special_tag.push(parent_tag_name.clone());
+            } else {
+                node.within_special_tag = Some(vec![parent_tag_name.clone()]);
+            }
+        }
+    }
 }
 
 /// Parses a string of HTML into a Node struct

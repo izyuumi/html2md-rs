@@ -15,6 +15,7 @@ impl StringPrintNode for String {
 
 #[cfg(test)]
 mod to_md_tests {
+    use crate::StringPrintNode;
     use html2md_rs::to_md::from_html_to_md;
 
     #[test]
@@ -122,6 +123,7 @@ println!(\"{}\", z);
 <p>blockquote</p>
 </blockquote>"
             .to_string();
+        input.print_node();
         let expected = "> hello\n> world\n> from\n> blockquote\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
