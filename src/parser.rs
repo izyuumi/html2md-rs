@@ -26,12 +26,45 @@ pub enum ParseHTMLTypeError {
 impl Display for ParseHTMLTypeError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ParseHTMLTypeError::MalformedTag(tag, error) => {
-                write!(f, "Malformed tag: {} - {:?}", tag, error)
-            }
-            ParseHTMLTypeError::MalformedAttribute(attr, error) => {
-                write!(f, "Malformed attribute: {} - {:?}", attr, error)
-            }
+            ParseHTMLTypeError::MalformedTag(tag, error) => match error {
+                MalformedTagError::MissingClosingBracket(index) => {
+                    write!(
+                        f,
+                        "Malformed tag: {} - Missing closing bracket at around index {}",
+                        tag, index
+                    )
+                }
+                MalformedTagError::MissingTagName(index) => {
+                    write!(
+                        f,
+                        "Malformed tag: {} - Missing tag name at around index {}",
+                        tag, index
+                    )
+                }
+            },
+            ParseHTMLTypeError::MalformedAttribute(attr, error) => match error {
+                MalformedAttributeError::MissingQuotationMark(index) => {
+                    write!(
+                        f,
+                        "Malformed attribute: {} - Missing quotation mark at around index {}",
+                        attr, index
+                    )
+                }
+                MalformedAttributeError::MissingAttributeName(index) => {
+                    write!(
+                        f,
+                        "Malformed attribute: {} - Missing attribute name at around index {}",
+                        attr, index
+                    )
+                }
+                MalformedAttributeError::MissingAttributeValue(index) => {
+                    write!(
+                        f,
+                        "Malformed attribute: {} - Missing attribute value at around index {}",
+                        attr, index
+                    )
+                }
+            },
         }
     }
 }
