@@ -284,8 +284,6 @@ fn modify_stack_with_node(stack: &mut Vec<Node>, mut new_node: Node) {
         // modify the new_node with the parent's within_special_tag and tag type
         modify_node_with_parent(&mut new_node, parent);
         parent.children.push(new_node.clone());
-        println!("parent: {:#?}", parent);
-        println!("{:#?}", stack);
         return;
     }
     // if stack is empty, add new_node to the stack
