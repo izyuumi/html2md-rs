@@ -24,10 +24,12 @@ use crate::{
 ///     tag_name: Some(H1),
 ///     value: None,
 ///     attributes: None,
+///     within_special_tag: None,
 ///     children: vec![Node {
 ///         tag_name: Some(Text),
 ///         value: Some("Hello world".to_string()),
 ///         attributes: None,
+///         within_special_tag: None,
 ///         children: Vec::new(),
 ///     }],
 /// };
@@ -119,7 +121,13 @@ pub fn to_md(node: Node) -> String {
                 res.push_str("  \n");
                 follow_child = false;
             }
+            Blockquote => {}
             Text => {
+                if let Some(special_tags) = &node.within_special_tag {
+                    if special_tags.contains(&Blockquote) {
+                        res.push_str("> ");
+                    }
+                }
                 res.push_str(&node.value.unwrap_or("".to_string()));
                 return res;
             }

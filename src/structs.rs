@@ -20,6 +20,7 @@ pub enum NodeType {
     Code,
     Hr,
     Br,
+    Blockquote,
     Text,
 }
 
@@ -50,9 +51,20 @@ impl FromStr for NodeType {
             "code" => Code,
             "hr" => Hr,
             "br" => Br,
+            "blockquote" => Blockquote,
             _ => return Err(ParseNodeTypeError),
         };
         Ok(node_type)
+    }
+}
+
+impl NodeType {
+    pub fn is_special_tag(&self) -> bool {
+        use NodeType::*;
+        match self {
+            Blockquote => true,
+            _ => false,
+        }
     }
 }
 
@@ -61,5 +73,16 @@ pub struct Node {
     pub tag_name: Option<NodeType>,
     pub value: Option<String>,
     pub attributes: Option<HashMap<String, String>>,
+    pub within_special_tag: Option<Vec<NodeType>>,
     pub children: Vec<Node>,
+}
+
+pub trait PrintNode {
+    fn print_node(&self);
+}
+
+impl PrintNode for Node {
+    fn print_node(&self) {
+        println!("{:#?}", self);
+    }
 }

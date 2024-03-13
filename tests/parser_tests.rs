@@ -16,10 +16,12 @@ mod parser_tests {
             tag_name: Some(Div),
             value: None,
             attributes: None,
+            within_special_tag: None,
             children: vec![Node {
                 tag_name: Some(Text),
                 value: Some("hello".to_string()),
                 attributes: None,
+                within_special_tag: None,
                 children: vec![],
             }],
         };
@@ -33,15 +35,18 @@ mod parser_tests {
             tag_name: None,
             value: None,
             attributes: None,
+            within_special_tag: None,
             children: vec![
                 Node {
                     tag_name: Some(H1),
                     value: None,
                     attributes: None,
+                    within_special_tag: None,
                     children: vec![Node {
                         tag_name: Some(Text),
                         value: Some("hello".to_string()),
                         attributes: None,
+                        within_special_tag: None,
                         children: vec![],
                     }],
                 },
@@ -49,10 +54,12 @@ mod parser_tests {
                     tag_name: Some(H2),
                     value: None,
                     attributes: None,
+                    within_special_tag: None,
                     children: vec![Node {
                         tag_name: Some(Text),
                         value: Some("world".to_string()),
                         attributes: None,
+                        within_special_tag: None,
                         children: vec![],
                     }],
                 },
@@ -68,15 +75,18 @@ mod parser_tests {
             tag_name: Some(Ul),
             value: None,
             attributes: None,
+            within_special_tag: None,
             children: vec![
                 Node {
                     tag_name: Some(Li),
                     value: None,
                     attributes: None,
+                    within_special_tag: None,
                     children: vec![Node {
                         tag_name: Some(Text),
                         value: Some("hello".to_string()),
                         attributes: None,
+                        within_special_tag: None,
                         children: vec![],
                     }],
                 },
@@ -84,10 +94,12 @@ mod parser_tests {
                     tag_name: Some(Li),
                     value: None,
                     attributes: None,
+                    within_special_tag: None,
                     children: vec![Node {
                         tag_name: Some(Text),
                         value: Some("world".to_string()),
                         attributes: None,
+                        within_special_tag: None,
                         children: vec![],
                     }],
                 },
@@ -103,15 +115,18 @@ mod parser_tests {
             tag_name: Some(Ol),
             value: None,
             attributes: None,
+            within_special_tag: None,
             children: vec![
                 Node {
                     tag_name: Some(Li),
                     value: None,
                     attributes: None,
+                    within_special_tag: None,
                     children: vec![Node {
                         tag_name: Some(Text),
                         value: Some("hello".to_string()),
                         attributes: None,
+                        within_special_tag: None,
                         children: vec![],
                     }],
                 },
@@ -119,10 +134,12 @@ mod parser_tests {
                     tag_name: Some(Li),
                     value: None,
                     attributes: None,
+                    within_special_tag: None,
                     children: vec![Node {
                         tag_name: Some(Text),
                         value: Some("world".to_string()),
                         attributes: None,
+                        within_special_tag: None,
                         children: vec![],
                     }],
                 },
@@ -138,6 +155,7 @@ mod parser_tests {
             tag_name: Some(Div),
             value: None,
             attributes: None,
+            within_special_tag: None,
             children: vec![],
         };
         assert_eq!(parse_html(input), expected);
@@ -152,15 +170,18 @@ mod parser_tests {
             tag_name: None,
             value: None,
             attributes: None,
+            within_special_tag: None,
             children: vec![
                 Node {
                     tag_name: Some(Div),
                     value: None,
                     attributes: None,
+                    within_special_tag: None,
                     children: vec![Node {
                         tag_name: Some(Text),
                         value: Some("hello".to_string()),
                         attributes: None,
+                        within_special_tag: None,
                         children: vec![],
                     }],
                 },
@@ -168,6 +189,7 @@ mod parser_tests {
                     tag_name: Some(Div),
                     value: None,
                     attributes: None,
+                    within_special_tag: None,
                     children: vec![],
                 },
             ],

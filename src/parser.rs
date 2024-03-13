@@ -2,7 +2,7 @@ use crate::structs::{
     Node,
     NodeType::{self, *},
 };
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, fmt::Display, str::FromStr};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum MalformedTagError {
@@ -22,6 +22,22 @@ pub enum ParseHTMLTypeError {
     MalformedTag(String, MalformedTagError),
     MalformedAttribute(String, MalformedAttributeError),
     UnknownNodeType(String, u32),
+}
+
+impl Display for ParseHTMLTypeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ParseHTMLTypeError::MalformedTag(tag, error) => {
+                write!(f, "Malformed tag: {} - {:?}", tag, error)
+            }
+            ParseHTMLTypeError::MalformedAttribute(attr, error) => {
+                write!(f, "Malformed attribute: {} - {:?}", attr, error)
+            }
+            ParseHTMLTypeError::UnknownNodeType(node, index) => {
+                write!(f, "Unknown node type: {} at around index {}", node, index)
+            }
+        }
+    }
 }
 
 /// Safely parses a string of HTML into a Node struct
@@ -46,11 +62,13 @@ pub enum ParseHTMLTypeError {
 /// let expected = Node {
 ///     tag_name: Some(Div),
 ///     value: None,
+///     within_special_tag: None,
 ///     attributes: None,
 ///     children: vec![Node {
 ///         tag_name: Some(Text),
 ///         value: Some("hello".to_string()),
 ///         attributes: None,
+///         within_special_tag: None,
 ///         children: Vec::new(),
 ///     }],
 /// };
@@ -127,23 +145,53 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
 
                 match NodeType::from_str(node_name) {
                     Ok(node_type) => {
-                        let node = Node {
-                            tag_name: Some(node_type),
+                        let mut node = Node {
+                            tag_name: Some(node_type.clone()),
                             value: None,
                             attributes: attribute_map,
+                            within_special_tag: None,
                             children: Vec::new(),
                         };
                         if self_closing {
                             if let Some(parent) = stack.last_mut() {
+                                node.within_special_tag = parent.within_special_tag.clone();
+                                if let Some(parent_tag_name) = &parent.tag_name {
+                                    if parent_tag_name.is_special_tag() {
+                                        if let Some(within_special_tag) =
+                                            &mut node.within_special_tag
+                                        {
+                                            within_special_tag.push(parent_tag_name.clone());
+                                        } else {
+                                            node.within_special_tag =
+                                                Some(vec![parent_tag_name.clone()]);
+                                        }
+                                    }
+                                }
                                 parent.children.push(node);
                             } else {
                                 nodes.push(node);
                             }
                             current_index += closing_index + 2;
-                        } else {
+                            continue;
+                        }
+                        if let Some(parent) = stack.last_mut() {
+                            node.within_special_tag = parent.within_special_tag.clone();
+                            if let Some(parent_tag_name) = &parent.tag_name {
+                                if parent_tag_name.is_special_tag() {
+                                    if let Some(within_special_tag) = &mut node.within_special_tag {
+                                        within_special_tag.push(parent_tag_name.clone());
+                                    } else {
+                                        node.within_special_tag =
+                                            Some(vec![parent_tag_name.clone()]);
+                                    }
+                                }
+                            }
                             stack.push(node);
                             current_index += closing_index + 1;
+                            continue;
                         }
+                        stack.push(node);
+                        current_index += closing_index + 1;
                         continue;
                     }
                     Err(_) => {
@@ -168,10 +216,21 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
         }
         match stack.last_mut() {
             Some(parent) => {
+                let mut within_special_tag = parent.within_special_tag.clone();
+                if let Some(parent_tag_name) = &parent.tag_name {
+                    if parent_tag_name.is_special_tag() {
+                        if let Some(within_special_tag) = &mut within_special_tag {
+                            within_special_tag.push(parent_tag_name.clone());
+                        } else {
+                            within_special_tag = Some(vec![parent_tag_name.clone()]);
+                        }
+                    }
+                }
                 parent.children.push(Node {
                     tag_name: Some(Text),
                     value: Some(text.to_string()),
                     attributes: None,
+                    within_special_tag,
                     children: Vec::new(),
                 });
             }
@@ -180,6 +239,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
                     tag_name: Some(Text),
                     value: Some(text.to_string()),
                     attributes: None,
+                    within_special_tag: None,
                     children: Vec::new(),
                 });
             }
@@ -195,6 +255,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
         tag_name: None,
         value: None,
         attributes: None,
+        within_special_tag: None,
         children: nodes,
     })
 }
@@ -224,10 +285,12 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
 ///     tag_name: Some(Div),
 ///     value: None,
 ///     attributes: None,
+///     within_special_tag: None,
 ///     children: vec![Node {
 ///         tag_name: Some(Text),
 ///         value: Some("hello".to_string()),
 ///         attributes: None,
+///         within_special_tag: None,
 ///         children: Vec::new(),
 ///     }],
 /// };

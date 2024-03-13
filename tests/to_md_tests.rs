@@ -1,3 +1,18 @@
+use html2md_rs::{parser::safe_parse_html, structs::PrintNode};
+
+trait StringPrintNode {
+    fn print_node(&self);
+}
+
+impl StringPrintNode for String {
+    fn print_node(&self) {
+        match safe_parse_html(self.clone()) {
+            Ok(node) => node.print_node(),
+            Err(e) => println!("Error: {}", e),
+        }
+    }
+}
+
 #[cfg(test)]
 mod to_md_tests {
     use html2md_rs::to_md::from_html_to_md;
@@ -95,6 +110,19 @@ println!(\"{}\", z);
     fn line_break() {
         let input = "<p>hello<br />world</p>".to_string();
         let expected = "hello  \nworld\n".to_string();
+        assert_eq!(from_html_to_md(input), expected);
+    }
+
+    #[test]
+    fn blockquote() {
+        let input = "<blockquote>
+<p>hello</p>
+<p>world</p>
+<p>from</p>
+<p>blockquote</p>
+</blockquote>"
+            .to_string();
+        let expected = "> hello\n> world\n> from\n> blockquote\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
 }
