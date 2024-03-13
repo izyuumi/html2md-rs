@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/izyuumi/html2md-rs/compare/v0.5.0...v0.5.1) (2024-03-13)
+
+
+### Bug Fixes
+
+* remove println calls from parser ([dd6fdb0](https://github.com/izyuumi/html2md-rs/commit/dd6fdb02ea58ffff3f19ca2121eb1f294aa04248))
+
 ## [0.5.0](https://github.com/izyuumi/html2md-rs/compare/v0.4.0...v0.5.0) (2024-03-13)
 
 
