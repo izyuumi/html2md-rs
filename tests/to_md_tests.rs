@@ -125,4 +125,11 @@ println!(\"{}\", z);
         let expected = "> hello\n> world\n> from\n> blockquote\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
+
+    #[test]
+    fn unknown_tag() {
+        let input = "<unknown>hello</unknown>".to_string();
+        let expected = "<unknown>hello</unknown>".to_string();
+        assert_eq!(from_html_to_md(input), expected);
+    }
 }

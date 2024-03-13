@@ -132,6 +132,10 @@ pub fn to_md(node: Node) -> String {
                 return res;
             }
             Div | Pre => (),
+            Unknown(tag) => {
+                res.push_str(&format!("<{}>", tag));
+                tail.push_str(&format!("</{}>", tag));
+            }
         }
     }
 

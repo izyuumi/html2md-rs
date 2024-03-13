@@ -1,4 +1,4 @@
-use std::{collections::HashMap, str::FromStr};
+use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum NodeType {
@@ -22,17 +22,21 @@ pub enum NodeType {
     Br,
     Blockquote,
     Text,
+    Unknown(String),
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct ParseNodeTypeError;
-
-impl FromStr for NodeType {
-    type Err = ParseNodeTypeError;
-
-    fn from_str(input: &str) -> Result<Self, Self::Err> {
+impl NodeType {
+    pub fn is_special_tag(&self) -> bool {
         use NodeType::*;
-        let node_type = match input.to_lowercase().as_str() {
+        match self {
+            Blockquote => true,
+            _ => false,
+        }
+    }
+
+    pub fn from_str(input: &str) -> Self {
+        use NodeType::*;
+        match input.to_lowercase().as_str() {
             "h1" => H1,
             "h2" => H2,
             "h3" => H3,
@@ -52,18 +56,7 @@ impl FromStr for NodeType {
             "hr" => Hr,
             "br" => Br,
             "blockquote" => Blockquote,
-            _ => return Err(ParseNodeTypeError),
-        };
-        Ok(node_type)
-    }
-}
-
-impl NodeType {
-    pub fn is_special_tag(&self) -> bool {
-        use NodeType::*;
-        match self {
-            Blockquote => true,
-            _ => false,
+            unknown => Unknown(unknown.to_string()),
         }
     }
 }
