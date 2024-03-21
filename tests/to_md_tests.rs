@@ -134,4 +134,27 @@ println!(\"{}\", z);
         let expected = "<unknown>hello</unknown>".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
+
+    #[test]
+    fn list_in_list() {
+        let input = "
+<ul>
+  <li>
+  	<p>abc</p>
+  	<ul>
+  	  <li>
+  	    <p>abc</p>
+  	    <ol>
+  	      <li>
+  	        <p>123</p>
+  	      </li>
+  	    </ol>
+  	  </li>
+  	</ul>
+  </li>
+</ul>"
+            .to_string();
+        let expected = "- abc\n  - abc\n    1. 123\n".to_string();
+        assert_eq!(from_html_to_md(input), expected);
+    }
 }

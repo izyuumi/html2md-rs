@@ -73,37 +73,31 @@ mod parser_tests {
         let input = "<ul><li>hello</li><li>world</li></ul>".to_string();
         let expected = Node {
             tag_name: Some(Ul),
-            value: None,
-            attributes: None,
-            within_special_tag: None,
             children: vec![
                 Node {
                     tag_name: Some(Li),
-                    value: None,
-                    attributes: None,
-                    within_special_tag: None,
+                    within_special_tag: Some(vec![Ul]),
                     children: vec![Node {
                         tag_name: Some(Text),
+                        within_special_tag: Some(vec![Ul]),
                         value: Some("hello".to_string()),
-                        attributes: None,
-                        within_special_tag: None,
-                        children: vec![],
+                        ..Default::default()
                     }],
+                    ..Default::default()
                 },
                 Node {
                     tag_name: Some(Li),
-                    value: None,
-                    attributes: None,
-                    within_special_tag: None,
+                    within_special_tag: Some(vec![Ul]),
                     children: vec![Node {
                         tag_name: Some(Text),
+                        within_special_tag: Some(vec![Ul]),
                         value: Some("world".to_string()),
-                        attributes: None,
-                        within_special_tag: None,
-                        children: vec![],
+                        ..Default::default()
                     }],
+                    ..Default::default()
                 },
             ],
+            ..Default::default()
         };
         assert_eq!(parse_html(input), expected);
     }
@@ -113,37 +107,31 @@ mod parser_tests {
         let input = "<ol><li>hello</li><li>world</li></ol>".to_string();
         let expected = Node {
             tag_name: Some(Ol),
-            value: None,
-            attributes: None,
-            within_special_tag: None,
             children: vec![
                 Node {
                     tag_name: Some(Li),
-                    value: None,
-                    attributes: None,
-                    within_special_tag: None,
+                    within_special_tag: Some(vec![Ol]),
                     children: vec![Node {
                         tag_name: Some(Text),
                         value: Some("hello".to_string()),
-                        attributes: None,
-                        within_special_tag: None,
-                        children: vec![],
+                        within_special_tag: Some(vec![Ol]),
+                        ..Default::default()
                     }],
+                    ..Default::default()
                 },
                 Node {
                     tag_name: Some(Li),
-                    value: None,
-                    attributes: None,
-                    within_special_tag: None,
+                    within_special_tag: Some(vec![Ol]),
                     children: vec![Node {
                         tag_name: Some(Text),
                         value: Some("world".to_string()),
-                        attributes: None,
-                        within_special_tag: None,
-                        children: vec![],
+                        within_special_tag: Some(vec![Ol]),
+                        ..Default::default()
                     }],
+                    ..Default::default()
                 },
             ],
+            ..Default::default()
         };
         assert_eq!(parse_html(input), expected);
     }
@@ -231,5 +219,106 @@ mod parser_tests {
                 MalformedAttributeError::MissingQuotationMark(5)
             ))
         );
+    }
+
+    #[test]
+    fn list_in_list() {
+        let input = "
+<ul>
+  <li>
+    <p>abc</p>
+	<ul>
+	  <li>
+	    <p>abc</p>
+	    <ol>
+	      <li>
+	        <p>123</p>
+	      </li>
+	    </ol>
+	  </li>
+	</ul>
+  </li>
+</ul>"
+            .to_string();
+        let expected = Node::new(
+            Some(Ul),
+            None,
+            None,
+            None,
+            vec![Node::new(
+                Some(Li),
+                None,
+                None,
+                Some(vec![Ul]),
+                vec![
+                    Node::new(
+                        Some(P),
+                        None,
+                        None,
+                        Some(vec![Ul]),
+                        vec![Node::new(
+                            Some(Text),
+                            Some("abc".to_string()),
+                            None,
+                            Some(vec![Ul]),
+                            vec![],
+                        )],
+                    ),
+                    Node::new(
+                        Some(Ul),
+                        None,
+                        None,
+                        Some(vec![Ul]),
+                        vec![Node::new(
+                            Some(Li),
+                            None,
+                            None,
+                            Some(vec![Ul, Ul]),
+                            vec![
+                                Node::new(
+                                    Some(P),
+                                    None,
+                                    None,
+                                    Some(vec![Ul, Ul]),
+                                    vec![Node::new(
+                                        Some(Text),
+                                        Some("abc".to_string()),
+                                        None,
+                                        Some(vec![Ul, Ul]),
+                                        vec![],
+                                    )],
+                                ),
+                                Node::new(
+                                    Some(Ol),
+                                    None,
+                                    None,
+                                    Some(vec![Ul, Ul]),
+                                    vec![Node::new(
+                                        Some(Li),
+                                        None,
+                                        None,
+                                        Some(vec![Ul, Ul, Ol]),
+                                        vec![Node::new(
+                                            Some(P),
+                                            None,
+                                            None,
+                                            Some(vec![Ul, Ul, Ol]),
+                                            vec![Node::new(
+                                                Some(Text),
+                                                Some("123".to_string()),
+                                                None,
+                                                Some(vec![Ul, Ul, Ol]),
+                                                vec![],
+                                            )],
+                                        )],
+                                    )],
+                                ),
+                            ],
+                        )],
+                    ),
+                ],
+            )],
+        );
+        assert_eq!(parse_html(input), expected);
     }
 }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub enum NodeType {
     H1,
     H2,
@@ -21,6 +21,7 @@ pub enum NodeType {
     Hr,
     Br,
     Blockquote,
+    #[default]
     Text,
     Unknown(String),
 }
@@ -29,7 +30,7 @@ impl NodeType {
     pub fn is_special_tag(&self) -> bool {
         use NodeType::*;
         match self {
-            Blockquote => true,
+            Blockquote | Ul | Ol => true,
             _ => false,
         }
     }
@@ -61,13 +62,59 @@ impl NodeType {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Node {
     pub tag_name: Option<NodeType>,
     pub value: Option<String>,
     pub attributes: Option<HashMap<String, String>>,
     pub within_special_tag: Option<Vec<NodeType>>,
     pub children: Vec<Node>,
+}
+
+impl Node {
+    /// Checks whether the node is within any of the special tags passed in
+    pub fn is_in_special_tag(&self, tags: &[NodeType]) -> bool {
+        if let Some(within_special_tag) = &self.within_special_tag {
+            within_special_tag.iter().any(|tag| tags.contains(tag))
+        } else {
+            false
+        }
+    }
+
+    /// Returns the leading spaces if there is any
+    /// This is used to format the output of the unordered and ordered lists
+    pub fn leading_spaces(&self) -> String {
+        let ul_or_ol = &[NodeType::Ul, NodeType::Ol];
+        if let Some(within_special_tag) = &self.within_special_tag {
+            " ".repeat(
+                (within_special_tag
+                    .iter()
+                    .filter(|tag| ul_or_ol.contains(tag))
+                    .count()
+                    - 1)
+                    * 2,
+            )
+        } else {
+            String::new()
+        }
+    }
+
+    /// Creates a new Node from tag_name, value, attributes, within_special_tag and children
+    pub fn new(
+        tag_name: Option<NodeType>,
+        value: Option<String>,
+        attributes: Option<HashMap<String, String>>,
+        within_special_tag: Option<Vec<NodeType>>,
+        children: Vec<Node>,
+    ) -> Self {
+        Node {
+            tag_name,
+            value,
+            attributes,
+            within_special_tag,
+            children,
+        }
+    }
 }
 
 pub trait PrintNode {

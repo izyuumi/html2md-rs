@@ -43,7 +43,7 @@ pub fn to_md(node: Node) -> String {
 
     let mut follow_child = true; // If the function should process the children of the node, defaults to true. False for some tags; like <ul> and <ol>.
 
-    if let Some(tag_type) = node.tag_name {
+    if let Some(tag_type) = &node.tag_name {
         match tag_type {
             H1 | H2 | H3 | H4 | H5 | H6 => tail.push('\n'),
             _ => (),
@@ -74,6 +74,7 @@ pub fn to_md(node: Node) -> String {
             }
             Ul => {
                 for child in &node.children {
+                    res.push_str(&child.leading_spaces());
                     res.push_str("- ");
                     res.push_str(&to_md(child.clone()));
                 }
@@ -82,6 +83,7 @@ pub fn to_md(node: Node) -> String {
             Ol => {
                 let mut i = 1;
                 for child in &node.children {
+                    res.push_str(&child.leading_spaces());
                     res.push_str(&format!("{}. ", i));
                     res.push_str(&to_md(child.clone()));
                     i += 1;
@@ -89,7 +91,9 @@ pub fn to_md(node: Node) -> String {
                 follow_child = false;
             }
             Li => {
-                tail.push('\n');
+                if !&node.children.iter().any(|child| child.tag_name == Some(P)) {
+                    tail.push('\n');
+                }
             }
             P => {
                 if node.children.is_empty() {
@@ -121,7 +125,6 @@ pub fn to_md(node: Node) -> String {
                 res.push_str("  \n");
                 follow_child = false;
             }
-            Blockquote => {}
             Text => {
                 if let Some(special_tags) = &node.within_special_tag {
                     if special_tags.contains(&Blockquote) {
@@ -131,7 +134,7 @@ pub fn to_md(node: Node) -> String {
                 res.push_str(&node.value.unwrap_or("".to_string()));
                 return res;
             }
-            Div | Pre => (),
+            Div | Pre | Blockquote => (),
             Unknown(tag) => {
                 res.push_str(&format!("<{}>", tag));
                 tail.push_str(&format!("</{}>", tag));
