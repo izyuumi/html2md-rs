@@ -81,7 +81,12 @@ pub fn to_md(node: Node) -> String {
                 follow_child = false;
             }
             Ol => {
-                let mut i = 1;
+                let mut i = node
+                    .attributes
+                    .as_ref()
+                    .and_then(|attrs| attrs.get("start"))
+                    .and_then(|start| start.parse().ok())
+                    .unwrap_or(1);
                 for child in &node.children {
                     res.push_str(&child.leading_spaces());
                     res.push_str(&format!("{}. ", i));

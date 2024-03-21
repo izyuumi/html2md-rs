@@ -157,4 +157,11 @@ println!(\"{}\", z);
         let expected = "- abc\n  - abc\n    1. 123\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
+
+    #[test]
+    fn ol_start_attribute() {
+        let input = "<ol start=\"3\"><li><p>hello</p></li><li><p>world</p></li></ol>".to_string();
+        let expected = "3. hello\n4. world\n".to_string();
+        assert_eq!(from_html_to_md(input), expected);
+    }
 }
