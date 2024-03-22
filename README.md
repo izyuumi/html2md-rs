@@ -23,7 +23,7 @@ There are many markdown conventions/standards out there. This project references
 
 ## Supported HTML tags
 
-Check the supported HTML tags [here](./src/structs.rs).
+Check the supported HTML tags [here](./src/structs.rs). Unsupported HTML tags will be parsed as `NodeType::Unknown(String)`.
 
 ## License
 
