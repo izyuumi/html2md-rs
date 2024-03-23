@@ -1,6 +1,3 @@
-> [!CAUTION]
-> This project is still in development and not ready for use. If you want to contribute, feel free to open an issue or a pull request. Leave a star if you like the project.
-
 # html2md-rs
 
 Parses HTML and converts it to markdown.
