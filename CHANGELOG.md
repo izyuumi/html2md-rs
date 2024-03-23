@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/izyuumi/html2md-rs/compare/v0.5.1...v0.6.0) (2024-03-23)
+
+
+### Features
+
+* enhance Node struct and improve HTML to markdown conversion ([d11981b](https://github.com/izyuumi/html2md-rs/commit/d11981bfdb38d5bea1e2422dd50923233cc27038))
+* support OL start attribute ([bc9b8da](https://github.com/izyuumi/html2md-rs/commit/bc9b8da869bcb28a81bded829b869eeef34a33e7))
+
 ## [0.5.1](https://github.com/izyuumi/html2md-rs/compare/v0.5.0...v0.5.1) (2024-03-13)
 
 
