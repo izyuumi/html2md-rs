@@ -1,5 +1,8 @@
+//! This module contains enums and structs used in the library.
+
 use std::collections::HashMap;
 
+/// Represents the different types of HTML elements that the library supports.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub enum NodeType {
     H1,
@@ -62,6 +65,7 @@ impl NodeType {
     }
 }
 
+/// Represents a node in the HTML tree.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Node {
     pub tag_name: Option<NodeType>,
@@ -114,15 +118,5 @@ impl Node {
             within_special_tag,
             children,
         }
-    }
-}
-
-pub trait PrintNode {
-    fn print_node(&self);
-}
-
-impl PrintNode for Node {
-    fn print_node(&self) {
-        println!("{:#?}", self);
     }
 }

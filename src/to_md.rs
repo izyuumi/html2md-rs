@@ -1,5 +1,7 @@
+//! This module contains functions that converts a Node to a markdown string.
+
 use crate::{
-    parser::ParseHTMLTypeError,
+    parser::ParseHTMLError,
     structs::{Node, NodeType::*},
 };
 
@@ -198,6 +200,6 @@ pub fn from_html_to_md(input: String) -> String {
 ///
 /// assert_eq!(parsed, Ok("# Hello world\n".to_string()));
 /// ```
-pub fn safe_from_html_to_md(input: String) -> Result<String, ParseHTMLTypeError> {
+pub fn safe_from_html_to_md(input: String) -> Result<String, ParseHTMLError> {
     crate::parser::safe_parse_html(input).map(to_md)
 }

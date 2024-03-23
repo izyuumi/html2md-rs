@@ -1,10 +1,8 @@
 #[cfg(test)]
-
 mod parser_tests {
     use html2md_rs::{
         parser::{
-            parse_html, safe_parse_html, MalformedAttributeError, MalformedTagError,
-            ParseHTMLTypeError,
+            parse_html, safe_parse_html, MalformedAttributeError, MalformedTagError, ParseHTMLError,
         },
         structs::{Node, NodeType::*},
     };
@@ -190,7 +188,7 @@ mod parser_tests {
         let input = "<div>hello</div><div".to_string();
         assert_eq!(
             safe_parse_html(input),
-            Err(ParseHTMLTypeError::MalformedTag(
+            Err(ParseHTMLError::MalformedTag(
                 "<div".to_string(),
                 MalformedTagError::MissingClosingBracket(16)
             ))
@@ -202,7 +200,7 @@ mod parser_tests {
         let input = "<>".to_string();
         assert_eq!(
             safe_parse_html(input),
-            Err(ParseHTMLTypeError::MalformedTag(
+            Err(ParseHTMLError::MalformedTag(
                 "".to_string(),
                 MalformedTagError::MissingTagName(0)
             ))
@@ -214,7 +212,7 @@ mod parser_tests {
         let input = "<div><div class=hello></div></div>".to_string();
         assert_eq!(
             safe_parse_html(input),
-            Err(ParseHTMLTypeError::MalformedAttribute(
+            Err(ParseHTMLError::MalformedAttribute(
                 "hello".to_string(),
                 MalformedAttributeError::MissingQuotationMark(5)
             ))

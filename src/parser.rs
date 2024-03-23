@@ -1,32 +1,49 @@
+//! This module contains functions which parsees HTML string into a custom Node struct.
+//!
+//! The Node struct is used to represent the HTML elements and their children in a tree-like structure.
+//!
+//! With the `safe_parse_html` function, malformed HTML will return an error instead of panicking.
+//! The `parse_html` function is a wrapper around `safe_parse_html` that panics if the input is malformed.
+
 use crate::structs::{
     Node,
     NodeType::{self, *},
 };
 use std::{collections::HashMap, fmt::Display};
 
+/// Errors that will be returned when parsing malformed HTML tags
 #[derive(Debug, PartialEq, Eq)]
 pub enum MalformedTagError {
+    /// The closing bracket of the tag is missing
     MissingClosingBracket(u32),
+    /// The tag name is missing
     MissingTagName(u32),
 }
 
+/// Errors that will be returned when parsing malformed HTML attributes
 #[derive(Debug, PartialEq, Eq)]
 pub enum MalformedAttributeError {
+    /// The quotation mark of the attribute is missing
     MissingQuotationMark(u32),
+    /// The attribute name is missing
     MissingAttributeName(u32),
+    /// The attribute value is missing
     MissingAttributeValue(u32),
 }
 
+/// Errors that can occur when parsing HTML
 #[derive(Debug, PartialEq, Eq)]
-pub enum ParseHTMLTypeError {
+pub enum ParseHTMLError {
+    /// The tag is malformed
     MalformedTag(String, MalformedTagError),
+    /// The attribute is malformed
     MalformedAttribute(String, MalformedAttributeError),
 }
 
-impl Display for ParseHTMLTypeError {
+impl Display for ParseHTMLError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ParseHTMLTypeError::MalformedTag(tag, error) => match error {
+            ParseHTMLError::MalformedTag(tag, error) => match error {
                 MalformedTagError::MissingClosingBracket(index) => {
                     write!(
                         f,
@@ -42,7 +59,7 @@ impl Display for ParseHTMLTypeError {
                     )
                 }
             },
-            ParseHTMLTypeError::MalformedAttribute(attr, error) => match error {
+            ParseHTMLError::MalformedAttribute(attr, error) => match error {
                 MalformedAttributeError::MissingQuotationMark(index) => {
                     write!(
                         f,
@@ -104,7 +121,7 @@ impl Display for ParseHTMLTypeError {
 ///
 /// assert_eq!(parsed, Ok(expected));
 /// ```
-pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
+pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
     // current_index is the index of the current character being processed
     let mut current_index = 0;
     // nodes is a vector of nodes that will be returned as an attribute of the resulting node
@@ -152,7 +169,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
 
                 if node_name.is_empty() {
                     // if the tag name is empty, the tag is malformed
-                    return Err(ParseHTMLTypeError::MalformedTag(
+                    return Err(ParseHTMLError::MalformedTag(
                         tag_content.to_string(),
                         MalformedTagError::MissingTagName(current_index as u32),
                     ));
@@ -175,7 +192,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
                         None => {
                             // if there is nothing in the stack, the tag is malformed
                             let closing_bracket_of_closing_tag = rest.find('>');
-                            return Err(ParseHTMLTypeError::MalformedTag(
+                            return Err(ParseHTMLError::MalformedTag(
                                 if let Some(index) = closing_bracket_of_closing_tag {
                                     // if there is a closing bracket, return the tag with the error
                                     rest[..index + 1].to_string()
@@ -225,7 +242,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLTypeError> {
                 continue;
             } else {
                 // if a closing bracket is not found, the tag is malformed
-                return Err(ParseHTMLTypeError::MalformedTag(
+                return Err(ParseHTMLError::MalformedTag(
                     rest.to_string(),
                     MalformedTagError::MissingClosingBracket(current_index as u32),
                 ));
@@ -359,7 +376,7 @@ pub fn parse_html(input: String) -> Node {
 fn parse_tag_attributes(
     tag_attributes: &str,
     current_index: usize,
-) -> Result<Option<HashMap<String, String>>, ParseHTMLTypeError> {
+) -> Result<Option<HashMap<String, String>>, ParseHTMLError> {
     // if the input is empty or only whitespace, return None
     if tag_attributes.trim().is_empty() {
         return Ok(None);
@@ -377,7 +394,7 @@ fn parse_tag_attributes(
         if attr.contains('=') {
             // if the attribute starts with an equals sign, it's malformed
             if attr.starts_with('=') {
-                return Err(ParseHTMLTypeError::MalformedAttribute(
+                return Err(ParseHTMLError::MalformedAttribute(
                     attr.to_string(),
                     MalformedAttributeError::MissingAttributeName(current_index as u32),
                 ));
@@ -385,7 +402,7 @@ fn parse_tag_attributes(
             //
             // if the attribute ends with an equals sign, it's malformed
             if attr.ends_with('=') {
-                return Err(ParseHTMLTypeError::MalformedAttribute(
+                return Err(ParseHTMLError::MalformedAttribute(
                     attr.to_string(),
                     MalformedAttributeError::MissingAttributeValue(current_index as u32),
                 ));
@@ -395,7 +412,7 @@ fn parse_tag_attributes(
             if let Some((key, value)) = attr.split_once('=') {
                 // if the value does
                 if !value.starts_with('"') {
-                    return Err(ParseHTMLTypeError::MalformedAttribute(
+                    return Err(ParseHTMLError::MalformedAttribute(
                         value.to_string(),
                         MalformedAttributeError::MissingQuotationMark(current_index as u32),
                     ));
@@ -411,7 +428,7 @@ fn parse_tag_attributes(
 
                 // if we are already in quotes, attribute shouldn't start with quotes
                 if in_quotes {
-                    return Err(ParseHTMLTypeError::MalformedAttribute(
+                    return Err(ParseHTMLError::MalformedAttribute(
                         current_value_in_quotes,
                         MalformedAttributeError::MissingQuotationMark(current_index as u32),
                     ));
@@ -429,7 +446,7 @@ fn parse_tag_attributes(
         // if the attribute doesn't contain an equals sign, we are in a quote
         // if not, the attribute is malformed
         if !in_quotes {
-            return Err(ParseHTMLTypeError::MalformedAttribute(
+            return Err(ParseHTMLError::MalformedAttribute(
                 attr.to_string(),
                 MalformedAttributeError::MissingQuotationMark(current_index as u32),
             ));
@@ -450,7 +467,7 @@ fn parse_tag_attributes(
                 }
                 // if the attribute doesn't end with a quote, it's malformed
                 None => {
-                    return Err(ParseHTMLTypeError::MalformedAttribute(
+                    return Err(ParseHTMLError::MalformedAttribute(
                         attr.to_string(),
                         MalformedAttributeError::MissingQuotationMark(current_index as u32),
                     ));
@@ -465,7 +482,7 @@ fn parse_tag_attributes(
 
     // if we are still in quotes, the attribute is malformed
     if in_quotes {
-        return Err(ParseHTMLTypeError::MalformedAttribute(
+        return Err(ParseHTMLError::MalformedAttribute(
             current_value_in_quotes,
             MalformedAttributeError::MissingQuotationMark(current_index as u32),
         ));

@@ -1,22 +1,28 @@
-use html2md_rs::{parser::safe_parse_html, structs::PrintNode};
-
-trait StringPrintNode {
-    fn print_node(&self);
-}
-
-impl StringPrintNode for String {
-    fn print_node(&self) {
-        match safe_parse_html(self.clone()) {
-            Ok(node) => node.print_node(),
-            Err(e) => println!("Error: {}", e),
-        }
-    }
-}
-
 #[cfg(test)]
 mod to_md_tests {
-    use crate::StringPrintNode;
-    use html2md_rs::to_md::from_html_to_md;
+    use html2md_rs::{parser::safe_parse_html, structs::Node, to_md::from_html_to_md};
+
+    pub trait PrintNode {
+        fn print_node(&self);
+    }
+
+    impl PrintNode for Node {
+        fn print_node(&self) {
+            println!("{:#?}", self);
+        }
+    }
+    trait StringPrintNode {
+        fn print_node(&self);
+    }
+
+    impl StringPrintNode for String {
+        fn print_node(&self) {
+            match safe_parse_html(self.clone()) {
+                Ok(node) => node.print_node(),
+                Err(e) => println!("Error: {}", e),
+            }
+        }
+    }
 
     #[test]
     fn simple_paragraph_with_text() {
