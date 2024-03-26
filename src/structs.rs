@@ -5,6 +5,14 @@ use std::collections::HashMap;
 /// Represents the different types of HTML elements that the library supports.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub enum NodeType {
+    Html,
+    Head,
+    Style,
+    Link,
+    Script,
+    Meta,
+    Title,
+    Body,
     H1,
     H2,
     H3,
@@ -41,6 +49,14 @@ impl NodeType {
     pub fn from_str(input: &str) -> Self {
         use NodeType::*;
         match input.to_lowercase().as_str() {
+            "html" => Html,
+            "head" => Head,
+            "style" => Style,
+            "link" => Link,
+            "script" => Script,
+            "meta" => Meta,
+            "title" => Title,
+            "body" => Body,
             "h1" => H1,
             "h2" => H2,
             "h3" => H3,

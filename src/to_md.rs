@@ -141,7 +141,9 @@ pub fn to_md(node: Node) -> String {
                 res.push_str(&node.value.unwrap_or("".to_string()));
                 return res;
             }
-            Div | Pre | Blockquote => (),
+            Html | Head | Style | Link | Script | Meta | Title | Body | Div | Pre | Blockquote => {
+                ()
+            }
             Unknown(tag) => {
                 res.push_str(&format!("<{}>", tag));
                 tail.push_str(&format!("</{}>", tag));
