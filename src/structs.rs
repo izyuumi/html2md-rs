@@ -34,6 +34,7 @@ pub enum NodeType {
     Blockquote,
     #[default]
     Text,
+    Comment,
     Unknown(String),
 }
 

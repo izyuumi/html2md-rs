@@ -170,4 +170,18 @@ println!(\"{}\", z);
         let expected = "3. hello\n4. world\n".to_string();
         assert_eq!(from_html_to_md(input), expected);
     }
+
+    #[test]
+    fn comment() {
+        let input = "<!-- hello -->".to_string();
+        let expected = "<!-- hello -->".to_string();
+        assert_eq!(from_html_to_md(input), expected);
+    }
+
+    #[test]
+    fn comments_in_p() {
+        let input = "<p><!-- hello --></p>".to_string();
+        let expected = "<!-- hello -->".to_string();
+        assert_eq!(from_html_to_md(input), expected);
+    }
 }

@@ -131,6 +131,46 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
 
     while current_index < input.len() {
         let rest = &input[current_index..];
+        if rest.starts_with("<!") {
+            // if the current character is an exclamation mark, it's a comment or DOCTYPE
+            if rest.starts_with("<!DOCTYPE") {
+                // if the comment is a DOCTYPE, ignore it
+                current_index += rest.find('>').unwrap() + 1;
+                continue;
+            }
+            // find the closing comment tag
+            if let Some(closing_comment_index) = rest.find("-->") {
+                // if the closing comment tag is found, the comment is valid
+                // extract the comment from the rest
+                let comment = &rest[..closing_comment_index + 3];
+                // create a new node with the comment
+                let new_node = Node {
+                    tag_name: Some(Comment),
+                    value: Some(
+                        comment
+                            .trim_start_matches("<!")
+                            .trim_start_matches("--")
+                            .trim_end_matches("-->")
+                            .to_string(),
+                    ),
+                    attributes: None,
+                    within_special_tag: None,
+                    children: Vec::new(),
+                };
+                // add the new_node to the stack
+                nodes.push(new_node);
+                // increment the current_index by the closing_comment_index + 3
+                // and continue to the next iteration
+                current_index += closing_comment_index + 3;
+                continue;
+            }
+            // if the closing comment tag is not found, the comment is malformed
+            return Err(ParseHTMLError::MalformedTag(
+                rest.to_string(),
+                MalformedTagError::MissingClosingBracket(current_index as u32),
+            ));
+        }
+
         if rest.starts_with('<') {
             if let Some(mut closing_index) = rest.find('>') {
                 // if the tag is a self-closing tag (i.e. <tag_name ... />)

@@ -144,6 +144,10 @@ pub fn to_md(node: Node) -> String {
             Html | Head | Style | Link | Script | Meta | Title | Body | Div | Pre | Blockquote => {
                 ()
             }
+            Comment => {
+                res.push_str(&format!("<!--{}-->", &node.value.unwrap_or("".to_string())));
+                return res;
+            }
             Unknown(tag) => {
                 res.push_str(&format!("<{}>", tag));
                 tail.push_str(&format!("</{}>", tag));
