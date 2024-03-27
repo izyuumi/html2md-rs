@@ -316,6 +316,13 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
         current_index += next_opening_tag
     }
 
+    // if the stack is not empty, add the stack to the nodes vector
+    if !stack.is_empty() {
+        for stack_node in stack.drain(..) {
+            nodes.push(stack_node);
+        }
+    }
+
     if nodes.len() == 1 {
         return Ok(nodes.remove(0));
     }

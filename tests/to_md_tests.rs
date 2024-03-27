@@ -184,4 +184,19 @@ println!(\"{}\", z);
         let expected = "<!-- hello -->".to_string();
         assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
     }
+
+    #[test]
+    fn unclosed_tag() {
+        let input = "<p>hello".to_string();
+        let expected = "hello\n".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn unclosed_tag_2() {
+        let input = "<html><head><title>Test</title></head><body><p>hello</p>".to_string();
+        input.print_node();
+        let expected = "hello\n".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
 }
