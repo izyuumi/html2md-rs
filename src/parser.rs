@@ -3,7 +3,7 @@
 //! The Node struct is used to represent the HTML elements and their children in a tree-like structure.
 //!
 //! With the `safe_parse_html` function, malformed HTML will return an error instead of panicking.
-//! The `parse_html` function is a wrapper around `safe_parse_html` that panics if the input is malformed.
+//! The `parse_html` function is a wrapper around `safe_parse_html` that panics if the input is malformed. However, it is deprecated and will be removed in future versions.
 
 use crate::structs::{
     Node,
@@ -405,6 +405,10 @@ fn modify_node_with_parent(node: &mut Node, parent: &Node) {
 ///
 /// assert_eq!(parsed, expected);
 /// ```
+#[deprecated(
+    since = "0.7.0",
+    note = "This function is deprecated and will be removed in future versions. Please use the safe_parse_html function instead."
+)]
 pub fn parse_html(input: String) -> Node {
     let parsed = safe_parse_html(input);
     match parsed {
