@@ -1,9 +1,7 @@
 #[cfg(test)]
 mod parser_tests {
     use html2md_rs::{
-        parser::{
-            parse_html, safe_parse_html, MalformedAttributeError, MalformedTagError, ParseHTMLError,
-        },
+        parser::{safe_parse_html, MalformedAttributeError, MalformedTagError, ParseHTMLError},
         structs::{Node, NodeType::*},
     };
 
@@ -23,7 +21,7 @@ mod parser_tests {
                 children: vec![],
             }],
         };
-        assert_eq!(parse_html(input), expected);
+        assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
     #[test]
@@ -63,7 +61,7 @@ mod parser_tests {
                 },
             ],
         };
-        assert_eq!(parse_html(input), expected);
+        assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
     #[test]
@@ -97,7 +95,7 @@ mod parser_tests {
             ],
             ..Default::default()
         };
-        assert_eq!(parse_html(input), expected);
+        assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
     #[test]
@@ -131,7 +129,7 @@ mod parser_tests {
             ],
             ..Default::default()
         };
-        assert_eq!(parse_html(input), expected);
+        assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
     #[test]
@@ -144,7 +142,7 @@ mod parser_tests {
             within_special_tag: None,
             children: vec![],
         };
-        assert_eq!(parse_html(input), expected);
+        assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
     #[test]
@@ -180,7 +178,7 @@ mod parser_tests {
                 },
             ],
         };
-        assert_eq!(parse_html(input), expected);
+        assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
     #[test]
@@ -317,6 +315,6 @@ mod parser_tests {
                 ],
             )],
         );
-        assert_eq!(parse_html(input), expected);
+        assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 }
