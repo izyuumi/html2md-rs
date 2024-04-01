@@ -428,8 +428,10 @@ fn parse_tag_attributes(
     tag_attributes: &str,
     current_index: usize,
 ) -> Result<Option<HashMap<String, String>>, ParseHTMLError> {
+    let tag_attributes = tag_attributes.trim();
+
     // if the input is empty or only whitespace, return None
-    if tag_attributes.trim().is_empty() {
+    if tag_attributes.is_empty() {
         return Ok(None);
     }
 
@@ -438,97 +440,72 @@ fn parse_tag_attributes(
     let mut current_key = String::new();
     let mut current_value_in_quotes = String::new();
     let mut in_quotes = false;
+    let mut expect_quotation_mark = false;
 
-    // loop through each string split by whitespace
-    for attr in tag_attributes.split_whitespace() {
-        // if the attribute contains an equals sign, it's a key-value pair
-        if attr.contains('=') {
-            // if the attribute starts with an equals sign, it's malformed
-            if attr.starts_with('=') {
+    for char in tag_attributes.trim().chars() {
+        // iterate through each character in the trimmed tag_attributes string
+
+        if in_quotes {
+            // if we are in quotation marks, just add the character to the current_value_in_quotes
+            // except for if the character is a quotation mark, which indicates the end of the value
+            if char.eq(&'"') {
+                // if the character is a quotation mark, add the current_value_in_quotes to the attribute_map
+                // and reset the current_key and current_value_in_quotes
+                attribute_map.insert(current_key.clone(), current_value_in_quotes.clone());
+                current_key.clear();
+                current_value_in_quotes.clear();
+                in_quotes = false;
+                continue;
+            }
+            current_value_in_quotes.push(char);
+            continue;
+        }
+
+        if char.eq(&'"') {
+            // if the character is a quotation mark, we are about to start the value
+            if current_key.is_empty() {
+                // if the current_key is empty, the attribute is malformed
                 return Err(ParseHTMLError::MalformedAttribute(
-                    attr.to_string(),
+                    tag_attributes.to_string(),
                     MalformedAttributeError::MissingAttributeName(current_index as u32),
                 ));
             }
-            //
-            // if the attribute ends with an equals sign, it's malformed
-            if attr.ends_with('=') {
-                return Err(ParseHTMLError::MalformedAttribute(
-                    attr.to_string(),
-                    MalformedAttributeError::MissingAttributeValue(current_index as u32),
-                ));
-            }
-
-            // if the attribute has an equal sign, split attribute into key and value
-            if let Some((key, value)) = attr.split_once('=') {
-                // if the value does
-                if !value.starts_with('"') {
-                    return Err(ParseHTMLError::MalformedAttribute(
-                        value.to_string(),
-                        MalformedAttributeError::MissingQuotationMark(current_index as u32),
-                    ));
-                }
-
-                // if the value ends with a quote, the value is in quotes, so add it to the map
-                if value.ends_with('"') {
-                    let value = value.strip_prefix('"').unwrap();
-                    let value = value.strip_suffix('"').unwrap();
-                    attribute_map.insert(key.to_string(), value.to_string());
-                    continue;
-                }
-
-                // if we are already in quotes, attribute shouldn't start with quotes
-                if in_quotes {
-                    return Err(ParseHTMLError::MalformedAttribute(
-                        current_value_in_quotes,
-                        MalformedAttributeError::MissingQuotationMark(current_index as u32),
-                    ));
-                }
-
-                // if reached this point, the value is not in quotes, so set the current key and value
-                current_key = key.to_string();
-                in_quotes = true;
-                current_value_in_quotes = value[1..].to_string(); // ignore the opening quote
-                continue;
-            }
-            unreachable!() // since this scope is only entered if the attribute contains an equals sign, this is unreachable
+            // set the in_quotes flag to true
+            in_quotes = true;
+            continue;
         }
 
-        // if the attribute doesn't contain an equals sign, we are in a quote
-        // if not, the attribute is malformed
-        if !in_quotes {
+        if char.is_whitespace() {
+            // if the character is whitespace, we can ignore it
+            // we know that we are not in_quotes, so we can safely ignore whitespace characters
+            continue;
+        }
+
+        if char.eq(&'=') {
+            // if the character is an equal sign, the current_key is complete
+            // and we are about to start the value
+            if current_key.is_empty() {
+                // if the current_key is empty, the attribute is malformed
+                return Err(ParseHTMLError::MalformedAttribute(
+                    tag_attributes.to_string(),
+                    MalformedAttributeError::MissingAttributeName(current_index as u32),
+                ));
+            }
+            // set the expect_quotation_mark flag to true
+            expect_quotation_mark = true;
+            continue;
+        }
+
+        if expect_quotation_mark {
+            // if we are expecting a quotation mark, the attribute is malformed
             return Err(ParseHTMLError::MalformedAttribute(
-                attr.to_string(),
+                tag_attributes.to_string(),
                 MalformedAttributeError::MissingQuotationMark(current_index as u32),
             ));
         }
 
-        // if the attribute contains a quote, it should be at the end of the attribute
-        if attr.contains('"') {
-            match attr.strip_prefix('"') {
-                // if the attribute ends with a quote, add the current key and value (with the stripped content) to the map
-                Some(stripped) => {
-                    in_quotes = false;
-                    current_value_in_quotes.push(' ');
-                    current_value_in_quotes.push_str(stripped);
-                    attribute_map.insert(current_key.clone(), current_value_in_quotes.clone());
-                    current_key.clear();
-                    current_value_in_quotes.clear();
-                    continue;
-                }
-                // if the attribute doesn't end with a quote, it's malformed
-                None => {
-                    return Err(ParseHTMLError::MalformedAttribute(
-                        attr.to_string(),
-                        MalformedAttributeError::MissingQuotationMark(current_index as u32),
-                    ));
-                }
-            }
-        }
-
-        // if the attribute doesn't contain an equals sign or a quote, add the attribute to the current value
-        current_value_in_quotes.push(' ');
-        current_value_in_quotes.push_str(attr);
+        // otherwise, add the character to the current_key
+        current_key.push(char);
     }
 
     // if we are still in quotes, the attribute is malformed

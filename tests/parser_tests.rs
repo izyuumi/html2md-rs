@@ -1,5 +1,7 @@
 #[cfg(test)]
 mod parser_tests {
+    use std::collections::HashMap;
+
     use html2md_rs::{
         parser::{safe_parse_html, MalformedAttributeError, MalformedTagError, ParseHTMLError},
         structs::{Node, NodeType::*},
@@ -211,7 +213,7 @@ mod parser_tests {
         assert_eq!(
             safe_parse_html(input),
             Err(ParseHTMLError::MalformedAttribute(
-                "hello".to_string(),
+                "class=hello".to_string(),
                 MalformedAttributeError::MissingQuotationMark(5)
             ))
         );
@@ -315,6 +317,21 @@ mod parser_tests {
                 ],
             )],
         );
+        assert_eq!(safe_parse_html(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn equal_in_attribute_value() {
+        let input = "<div class=\"hello=world\"></div>".to_string();
+        let mut attributes = HashMap::new();
+        attributes.insert("class".to_string(), "hello=world".to_string());
+        let expected = Node {
+            tag_name: Some(Div),
+            value: None,
+            attributes: Some(attributes),
+            within_special_tag: None,
+            children: vec![],
+        };
         assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 }
