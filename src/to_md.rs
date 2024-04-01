@@ -189,6 +189,7 @@ pub fn to_md(node: Node) -> String {
     since = "0.7.0",
     note = "This function is deprecated and will be removed in future versions. Please use the safe_parse_html function instead."
 )]
+#[allow(deprecated)]
 pub fn from_html_to_md(input: String) -> String {
     to_md(crate::parser::parse_html(input))
 }
