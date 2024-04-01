@@ -1,10 +1,8 @@
 #[cfg(test)]
 mod parser_tests {
-    use std::collections::HashMap;
-
     use html2md_rs::{
         parser::{safe_parse_html, MalformedAttributeError, MalformedTagError, ParseHTMLError},
-        structs::{Node, NodeType::*},
+        structs::{AttributeValues, Attributes, Node, NodeType::*},
     };
 
     #[test]
@@ -323,8 +321,11 @@ mod parser_tests {
     #[test]
     fn equal_in_attribute_value() {
         let input = "<div class=\"hello=world\"></div>".to_string();
-        let mut attributes = HashMap::new();
-        attributes.insert("class".to_string(), "hello=world".to_string());
+        let mut attributes = Attributes::new();
+        attributes.insert(
+            "class".to_string(),
+            AttributeValues::String("hello=world".to_string()),
+        );
         let expected = Node {
             tag_name: Some(Div),
             attributes: Some(attributes),
@@ -338,11 +339,14 @@ mod parser_tests {
     fn issue_21() {
         let input =
             "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">".to_string();
-        let mut attributes = HashMap::new();
-        attributes.insert("http-equiv".to_string(), "content-type".to_string());
+        let mut attributes = Attributes::new();
+        attributes.insert(
+            "http-equiv".to_string(),
+            AttributeValues::String("content-type".to_string()),
+        );
         attributes.insert(
             "content".to_string(),
-            "text/html; charset=utf-8".to_string(),
+            AttributeValues::String("text/html; charset=utf-8".to_string()),
         );
         let expected = Node {
             tag_name: Some(Meta),

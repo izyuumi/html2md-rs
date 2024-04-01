@@ -2,7 +2,7 @@
 
 use crate::{
     parser::ParseHTMLError,
-    structs::{Node, NodeType::*},
+    structs::{AttributeValues, Node, NodeType::*},
 };
 
 /// Converts a Node to a markdown string.
@@ -87,7 +87,11 @@ pub fn to_md(node: Node) -> String {
                     .attributes
                     .as_ref()
                     .and_then(|attrs| attrs.get("start"))
-                    .and_then(|start| start.parse().ok())
+                    .and_then(|start| match start {
+                        AttributeValues::String(start) => start.parse::<usize>().ok(),
+                        AttributeValues::Number(start) => Some(start as usize),
+                        _ => None,
+                    })
                     .unwrap_or(1);
                 for child in &node.children {
                     res.push_str(&child.leading_spaces());
@@ -112,7 +116,7 @@ pub fn to_md(node: Node) -> String {
                 if let Some(language) = node
                     .attributes
                     .as_ref()
-                    .and_then(|attrs| attrs.get("class"))
+                    .and_then(|attr| attr.get_class())
                     .unwrap_or(&"".to_string())
                     .split_whitespace()
                     .find(|class| class.starts_with("language-"))

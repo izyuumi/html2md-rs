@@ -6,7 +6,7 @@
 //! The `parse_html` function is a wrapper around `safe_parse_html` that panics if the input is malformed. However, it is deprecated and will be removed in future versions.
 
 use crate::structs::{
-    Node,
+    AttributeValues, Attributes, Node,
     NodeType::{self, *},
 };
 use std::{collections::HashMap, fmt::Display};
@@ -427,7 +427,7 @@ pub fn parse_html(input: String) -> Node {
 fn parse_tag_attributes(
     tag_attributes: &str,
     current_index: usize,
-) -> Result<Option<HashMap<String, String>>, ParseHTMLError> {
+) -> Result<Option<Attributes>, ParseHTMLError> {
     let tag_attributes = tag_attributes.trim();
 
     // if the input is empty or only whitespace, return None
@@ -435,7 +435,7 @@ fn parse_tag_attributes(
         return Ok(None);
     }
 
-    let mut attribute_map = HashMap::new();
+    let mut attribute_map = Attributes::new();
 
     let mut current_key = String::new();
     let mut current_value_in_quotes = String::new();
@@ -451,7 +451,10 @@ fn parse_tag_attributes(
             if char.eq(&'"') {
                 // if the character is a quotation mark, add the current_value_in_quotes to the attribute_map
                 // and reset the current_key and current_value_in_quotes
-                attribute_map.insert(current_key.clone(), current_value_in_quotes.clone());
+                attribute_map.insert(
+                    current_key.clone(),
+                    AttributeValues::String(current_value_in_quotes.clone()),
+                );
                 current_key.clear();
                 current_value_in_quotes.clear();
                 in_quotes = false;

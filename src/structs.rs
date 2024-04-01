@@ -87,7 +87,7 @@ impl NodeType {
 pub struct Node {
     pub tag_name: Option<NodeType>,
     pub value: Option<String>,
-    pub attributes: Option<HashMap<String, String>>,
+    pub attributes: Option<Attributes>,
     pub within_special_tag: Option<Vec<NodeType>>,
     pub children: Vec<Node>,
 }
@@ -124,7 +124,7 @@ impl Node {
     pub fn new(
         tag_name: Option<NodeType>,
         value: Option<String>,
-        attributes: Option<HashMap<String, String>>,
+        attributes: Option<Attributes>,
         within_special_tag: Option<Vec<NodeType>>,
         children: Vec<Node>,
     ) -> Self {
@@ -134,6 +134,96 @@ impl Node {
             attributes,
             within_special_tag,
             children,
+        }
+    }
+}
+
+/// Represents the Attributes of an HTML element.
+#[derive(Debug, PartialEq, Eq, Clone, Default)]
+pub struct Attributes {
+    id: Option<String>,
+    class: Option<String>,
+    attributes: HashMap<String, AttributeValues>,
+}
+
+impl Attributes {
+    /// Creates a new Attributes struct from id, class and attributes
+    pub fn new() -> Self {
+        Attributes {
+            id: None,
+            class: None,
+            attributes: HashMap::new(),
+        }
+    }
+
+    /// Returns the attribute value of the key passed in
+    pub fn get(&self, key: &str) -> Option<AttributeValues> {
+        match key {
+            "id" => self
+                .id
+                .as_ref()
+                .map(|id| AttributeValues::String(id.clone())),
+            "class" => self
+                .class
+                .as_ref()
+                .map(|class| AttributeValues::String(class.clone())),
+            _ => self.attributes.get(key).cloned(),
+        }
+    }
+
+    /// Returns the id attribute of the element
+    pub fn get_id(&self) -> Option<&String> {
+        self.id.as_ref()
+    }
+
+    /// Returns the class attribute of the element
+    pub fn get_class(&self) -> Option<&String> {
+        self.class.as_ref()
+    }
+
+    /// Returns the attributes of the element
+    pub fn contains(&self, key: &str) -> bool {
+        match key {
+            "id" => self.id.is_some(),
+            "class" => self.class.is_some(),
+            _ => self.attributes.contains_key(key),
+        }
+    }
+
+    /// Inserts a new attribute into the element with the key and value passed in
+    pub fn insert(&mut self, key: String, value: AttributeValues) {
+        match key.as_str() {
+            "id" => self.id = Some(value.to_string()),
+            "class" => self.class = Some(value.to_string()),
+            _ => {
+                self.attributes.insert(key, value);
+            }
+        }
+    }
+
+    /// Returns whether the element attributes are empty
+    pub fn is_empty(&self) -> bool {
+        self.id.is_none() && self.class.is_none() && self.attributes.is_empty()
+    }
+}
+
+/// Represents the different types of attribute values that the library supports.
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub enum AttributeValues {
+    /// Represents a string attribute value.
+    String(String),
+    /// Represents a boolean attribute value.
+    Bool(bool),
+    /// Represents an integer attribute value.
+    Number(i32),
+}
+
+impl std::fmt::Display for AttributeValues {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            AttributeValues::String(value) => write!(f, "{}", value),
+            AttributeValues::Bool(value) => write!(f, "{}", value),
+            AttributeValues::Number(value) => write!(f, "{}", value),
         }
     }
 }
