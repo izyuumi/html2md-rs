@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.7.1](https://github.com/izyuumi/html2md-rs/compare/v0.6.0...v0.7.1) (2024-04-01)
+
+
+### Features
+
+* add support for comments ([cdeedee](https://github.com/izyuumi/html2md-rs/commit/cdeedee239e1a992e40d459a848b8c68ca54d2b4))
+* add support for metadata tags ([33a27ba](https://github.com/izyuumi/html2md-rs/commit/33a27ba99434df9340a9823f7cfee1a023824c22)), closes [#16](https://github.com/izyuumi/html2md-rs/issues/16)
+
+
+### Bug Fixes
+
+* add deprecated flag to `parse_html` as it panics ([af0dfe9](https://github.com/izyuumi/html2md-rs/commit/af0dfe943b60af08e36440bb5f14ef10074954de))
+* handle unclosed HTML tags and ignore title tag content ([be05a43](https://github.com/izyuumi/html2md-rs/commit/be05a437e484dbc0a927534d0975655dd8d1284d))
+* parse `=` in attribute value properly ([5060304](https://github.com/izyuumi/html2md-rs/commit/5060304a65aceddd5099b4febfa8c6067088e9a4)), closes [#19](https://github.com/izyuumi/html2md-rs/issues/19)
+* remove deprecated `parse_html` from tests ([36ec69b](https://github.com/izyuumi/html2md-rs/commit/36ec69bc5791df2e962a76b65a7b5038934f79a0))
+
+
+### Miscellaneous Chores
+
+* release 0.7.1 ([c59984d](https://github.com/izyuumi/html2md-rs/commit/c59984dd532eb1ec523a3ac891ef483f7f73d279))
+
 ## [0.6.0](https://github.com/izyuumi/html2md-rs/compare/v0.5.1...v0.6.0) (2024-03-23)
 
 
