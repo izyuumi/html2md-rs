@@ -480,8 +480,13 @@ fn parse_tag_attributes(
         }
 
         if char.is_whitespace() {
-            // if the character is whitespace, we can ignore it
-            // we know that we are not in_quotes, so we can safely ignore whitespace characters
+            // if the character is whitespace, if could be indicating the end of a key
+            if !current_key.is_empty() {
+                // if the key has some value, add it to the attribute_map with value true
+                attribute_map.insert(current_key.clone(), AttributeValues::Bool(true));
+                current_key.clear();
+            }
+            // if the current_key is empty, the whitespace can be ignored
             continue;
         }
 
