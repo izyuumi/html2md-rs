@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.2](https://github.com/izyuumi/html2md-rs/compare/v0.7.1...v0.7.2) (2024-04-01)
+
+
+### Bug Fixes
+
+* set `expect_quotation_mark` flag to false ([d313e94](https://github.com/izyuumi/html2md-rs/commit/d313e94a2c7d9b4a2ca55ecaa1f68e01dff8807f)), closes [#21](https://github.com/izyuumi/html2md-rs/issues/21)
+
 ## [0.7.1](https://github.com/izyuumi/html2md-rs/compare/v0.6.0...v0.7.1) (2024-04-01)
 
 
