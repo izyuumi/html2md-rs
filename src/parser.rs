@@ -472,6 +472,7 @@ fn parse_tag_attributes(
             }
             // set the in_quotes flag to true
             in_quotes = true;
+            expect_quotation_mark = false;
             continue;
         }
 

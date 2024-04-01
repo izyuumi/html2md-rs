@@ -327,10 +327,27 @@ mod parser_tests {
         attributes.insert("class".to_string(), "hello=world".to_string());
         let expected = Node {
             tag_name: Some(Div),
-            value: None,
             attributes: Some(attributes),
-            within_special_tag: None,
-            children: vec![],
+            ..Default::default()
+        };
+        assert_eq!(safe_parse_html(input).unwrap(), expected);
+    }
+
+    // https://github.com/izyuumi/html2md-rs/issues/21
+    #[test]
+    fn issue_21() {
+        let input =
+            "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">".to_string();
+        let mut attributes = HashMap::new();
+        attributes.insert("http-equiv".to_string(), "content-type".to_string());
+        attributes.insert(
+            "content".to_string(),
+            "text/html; charset=utf-8".to_string(),
+        );
+        let expected = Node {
+            tag_name: Some(Meta),
+            attributes: Some(attributes),
+            ..Default::default()
         };
         assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
