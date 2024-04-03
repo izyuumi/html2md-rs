@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.8.0](https://github.com/izyuumi/html2md-rs/compare/v0.7.2...v0.8.0) (2024-04-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* enhance HTML attribute parsing and representation
+
+### Features
+
+* enhance HTML attribute parsing and representation ([ec66ebc](https://github.com/izyuumi/html2md-rs/commit/ec66ebccec892ed93a90f91f512aaf306afef859))
+* support for boolean attributes ([8ad63bb](https://github.com/izyuumi/html2md-rs/commit/8ad63bbe68fe20a592cdaacb717f0dc9120428e8))
+
+
+### Bug Fixes
+
+* add deprecated flag to `from_html_to_md` ([eb56449](https://github.com/izyuumi/html2md-rs/commit/eb5644908496e93e3ffb7f2e27e626c7e4c9ff99))
+* support for non-quoted attribute values ([956af83](https://github.com/izyuumi/html2md-rs/commit/956af83e2e455557734a27100156d3963d191293)), closes [#23](https://github.com/izyuumi/html2md-rs/issues/23)
+
 ## [0.7.2](https://github.com/izyuumi/html2md-rs/compare/v0.7.1...v0.7.2) (2024-04-01)
 
 
