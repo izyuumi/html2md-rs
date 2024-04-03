@@ -206,18 +206,6 @@ mod parser_tests {
     }
 
     #[test]
-    fn missing_quotation_mark() {
-        let input = "<div><div class=hello></div></div>".to_string();
-        assert_eq!(
-            safe_parse_html(input),
-            Err(ParseHTMLError::MalformedAttribute(
-                "class=hello".to_string(),
-                MalformedAttributeError::MissingQuotationMark(5)
-            ))
-        );
-    }
-
-    #[test]
     fn list_in_list() {
         let input = "
 <ul>
@@ -350,6 +338,31 @@ mod parser_tests {
         );
         let expected = Node {
             tag_name: Some(Meta),
+            attributes: Some(attributes),
+            ..Default::default()
+        };
+        assert_eq!(safe_parse_html(input).unwrap(), expected);
+    }
+
+    // https://github.com/izyuumi/html2md-rs/issues/23
+    #[test]
+    fn issue_23() {
+        let input = "<form id=\"search\" role=\"search\" action=/search></form>".to_string();
+        let mut attributes = Attributes::new();
+        attributes.insert(
+            "id".to_string(),
+            AttributeValues::String("search".to_string()),
+        );
+        attributes.insert(
+            "role".to_string(),
+            AttributeValues::String("search".to_string()),
+        );
+        attributes.insert(
+            "action".to_string(),
+            AttributeValues::String("/search".to_string()),
+        );
+        let expected = Node {
+            tag_name: Some(Unknown("form".to_string())),
             attributes: Some(attributes),
             ..Default::default()
         };

@@ -9,7 +9,7 @@ use crate::structs::{
     AttributeValues, Attributes, Node,
     NodeType::{self, *},
 };
-use std::{collections::HashMap, fmt::Display};
+use std::fmt::Display;
 
 /// Errors that will be returned when parsing malformed HTML tags
 #[derive(Debug, PartialEq, Eq)]
@@ -440,7 +440,7 @@ fn parse_tag_attributes(
     let mut current_key = String::new();
     let mut current_value_in_quotes = String::new();
     let mut in_quotes = false;
-    let mut expect_quotation_mark = false;
+    let mut may_be_reading_non_quoted_value = false;
 
     for char in tag_attributes.trim().chars() {
         // iterate through each character in the trimmed tag_attributes string
@@ -451,10 +451,7 @@ fn parse_tag_attributes(
             if char.eq(&'"') {
                 // if the character is a quotation mark, add the current_value_in_quotes to the attribute_map
                 // and reset the current_key and current_value_in_quotes
-                attribute_map.insert(
-                    current_key.clone(),
-                    AttributeValues::String(current_value_in_quotes.clone()),
-                );
+                add_to_attribute_map(&mut attribute_map, &current_key, &current_value_in_quotes);
                 current_key.clear();
                 current_value_in_quotes.clear();
                 in_quotes = false;
@@ -466,6 +463,7 @@ fn parse_tag_attributes(
 
         if char.eq(&'"') {
             // if the character is a quotation mark, we are about to start the value
+            // we know in_quotes is false because that is checked above
             if current_key.is_empty() {
                 // if the current_key is empty, the attribute is malformed
                 return Err(ParseHTMLError::MalformedAttribute(
@@ -475,11 +473,22 @@ fn parse_tag_attributes(
             }
             // set the in_quotes flag to true
             in_quotes = true;
-            expect_quotation_mark = false;
+            // if the character is a quotation mark, we are going to be in quotes
+            // so we don't need to keep track of non-quoted value flag
+            may_be_reading_non_quoted_value = false;
             continue;
         }
 
         if char.is_whitespace() {
+            if may_be_reading_non_quoted_value {
+                // if we are reading a non-quoted value, the whitespace indicates the end of the value
+                // add the value to the attribute_map
+                add_to_attribute_map(&mut attribute_map, &current_key, &current_value_in_quotes);
+                current_key.clear();
+                current_value_in_quotes.clear();
+                may_be_reading_non_quoted_value = false;
+                continue;
+            }
             // if the character is whitespace, if could be indicating the end of a key
             if !current_key.is_empty() {
                 // if the key has some value, add it to the attribute_map with value true
@@ -490,8 +499,9 @@ fn parse_tag_attributes(
             continue;
         }
 
-        if char.eq(&'=') {
+        if !in_quotes && !may_be_reading_non_quoted_value && char.eq(&'=') {
             // if the character is an equal sign, the current_key is complete
+            // if we are in quotes or reading a non-quoted value, the equal sign is part of the value
             // and we are about to start the value
             if current_key.is_empty() {
                 // if the current_key is empty, the attribute is malformed
@@ -500,24 +510,26 @@ fn parse_tag_attributes(
                     MalformedAttributeError::MissingAttributeName(current_index as u32),
                 ));
             }
-            // set the expect_quotation_mark flag to true
-            expect_quotation_mark = true;
+            // equal sign indicates the start of the value up to the next whitespace
+            may_be_reading_non_quoted_value = true;
             continue;
         }
 
-        if expect_quotation_mark {
-            // if we are expecting a quotation mark, the attribute is malformed
-            return Err(ParseHTMLError::MalformedAttribute(
-                tag_attributes.to_string(),
-                MalformedAttributeError::MissingQuotationMark(current_index as u32),
-            ));
+        if may_be_reading_non_quoted_value {
+            // if we are reading a non-quoted value, add the character to the current_value_in_quotes
+            current_value_in_quotes.push(char);
+            continue;
         }
 
         // otherwise, add the character to the current_key
         current_key.push(char);
     }
 
-    // if we are still in quotes, the attribute is malformed
+    if may_be_reading_non_quoted_value && !current_value_in_quotes.is_empty() {
+        // if we are reading a non-quoted value and the value is not empty, add the value to the attribute_map
+        add_to_attribute_map(&mut attribute_map, &current_key, &current_value_in_quotes);
+    }
+
     if in_quotes {
         return Err(ParseHTMLError::MalformedAttribute(
             current_value_in_quotes,
@@ -530,4 +542,18 @@ fn parse_tag_attributes(
         true => Ok(None),
         false => Ok(Some(attribute_map)),
     }
+}
+
+fn add_to_attribute_map(
+    attribute_map: &mut Attributes,
+    current_key: &str,
+    current_value_in_quotes: &str,
+) {
+    if current_key.is_empty() || current_value_in_quotes.is_empty() {
+        return;
+    }
+    attribute_map.insert(
+        current_key.to_string(),
+        AttributeValues::String(current_value_in_quotes.to_string()),
+    );
 }
