@@ -481,6 +481,10 @@ fn parse_tag_attributes(
 
         if char.is_whitespace() {
             if may_be_reading_non_quoted_value {
+                if current_value_in_quotes.is_empty() {
+                    // if we are reading a non-quoted value and the value is empty, we can ignore the whitespace
+                    continue;
+                }
                 // if we are reading a non-quoted value, the whitespace indicates the end of the value
                 // add the value to the attribute_map
                 add_to_attribute_map(&mut attribute_map, &current_key, &current_value_in_quotes);
@@ -494,6 +498,7 @@ fn parse_tag_attributes(
                 // if the key has some value, add it to the attribute_map with value true
                 attribute_map.insert(current_key.clone(), AttributeValues::Bool(true));
                 current_key.clear();
+                continue;
             }
             // if the current_key is empty, the whitespace can be ignored
             continue;
@@ -556,4 +561,22 @@ fn add_to_attribute_map(
         current_key.to_string(),
         AttributeValues::String(current_value_in_quotes.to_string()),
     );
+}
+
+// https://github.com/izyuumi/html2md-rs/issues/25
+#[test]
+fn issue_25() {
+    let input = "property=\"og:type\" content= \"website\"".to_string();
+    let expected = Attributes::from(vec![
+        (
+            "property".to_string(),
+            AttributeValues::String("og:type".to_string()),
+        ),
+        (
+            "content".to_string(),
+            AttributeValues::String("website".to_string()),
+        ),
+    ]);
+    let parsed = parse_tag_attributes(&input, 0).unwrap().unwrap();
+    assert_eq!(parsed, expected);
 }

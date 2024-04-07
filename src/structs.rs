@@ -205,6 +205,15 @@ impl Attributes {
     pub fn is_empty(&self) -> bool {
         self.id.is_none() && self.class.is_none() && self.attributes.is_empty()
     }
+
+    /// Inserts attributes into the element from a tuple vector
+    pub fn from(vec: Vec<(String, AttributeValues)>) -> Self {
+        let mut attributes = Attributes::new();
+        for (key, value) in vec {
+            attributes.insert(key, value);
+        }
+        attributes
+    }
 }
 
 /// Represents the different types of attribute values that the library supports.
