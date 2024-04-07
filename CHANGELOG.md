@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/izyuumi/html2md-rs/compare/v0.8.0...v0.8.1) (2024-04-07)
+
+
+### Bug Fixes
+
+* allow spaces between equal sign and value ([f604f81](https://github.com/izyuumi/html2md-rs/commit/f604f8108a19ba177535565025d69437c7f60bfa)), closes [#25](https://github.com/izyuumi/html2md-rs/issues/25)
+
 ## [0.8.0](https://github.com/izyuumi/html2md-rs/compare/v0.7.2...v0.8.0) (2024-04-03)
 
 
