@@ -5,12 +5,21 @@ on:
     branches:
       - main
 
+env:
+  RUSTFLAGS: "-Dwarnings"
+
 permissions:
   contents: write
   pull-requests: write
 
 jobs:
-  release-please:
+  clippy-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run Clippy
+        run: cargo clippy --all-targets --all-features
+  release_please:
     runs-on: ubuntu-latest
     steps:
       - uses: google-github-actions/release-please-action@v4
