@@ -246,7 +246,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
                 }
 
                 // parse thae tag name into a NodeType from the node_name string
-                let node_type = NodeType::from_str(node_name);
+                let node_type = NodeType::from_tag_str(node_name);
 
                 // initialize a new node with the tag name and attribute map
                 let mut new_node = Node {

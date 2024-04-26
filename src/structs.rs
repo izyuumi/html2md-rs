@@ -44,7 +44,7 @@ impl NodeType {
         matches!(self, Blockquote | Ul | Ol)
     }
 
-    pub fn from_str(input: &str) -> Self {
+    pub fn from_tag_str(input: &str) -> Self {
         use NodeType::*;
         match input.to_lowercase().as_str() {
             "html" => Html,
