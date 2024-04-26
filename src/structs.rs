@@ -1,4 +1,4 @@
-//! This module contains enums and structs used in the library.
+// }
 
 use std::collections::HashMap;
 
@@ -41,10 +41,7 @@ pub enum NodeType {
 impl NodeType {
     pub fn is_special_tag(&self) -> bool {
         use NodeType::*;
-        match self {
-            Blockquote | Ul | Ol => true,
-            _ => false,
-        }
+        matches!(self, Blockquote | Ul | Ol)
     }
 
     pub fn from_str(input: &str) -> Self {
