@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.2](https://github.com/izyuumi/html2md-rs/compare/v0.8.1...v0.8.2) (2024-04-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename NodeType::from_str() with NodeType::from_tag_str
+
+### Bug Fixes
+
+* rename NodeType::from_str() with NodeType::from_tag_str ([04a058d](https://github.com/izyuumi/html2md-rs/commit/04a058dd2590b79630ff97e9d345746d255cb482))
+
+
+### Miscellaneous Chores
+
+* release 0.8.2 ([8e7a8cf](https://github.com/izyuumi/html2md-rs/commit/8e7a8cf1c5c57ca3649ff8a5df89fc1a61ed2d45))
+
 ## [0.8.1](https://github.com/izyuumi/html2md-rs/compare/v0.8.0...v0.8.1) (2024-04-07)
 
 
