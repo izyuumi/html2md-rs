@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod parser_tests {
     use html2md_rs::{
-        parser::{safe_parse_html, MalformedAttributeError, MalformedTagError, ParseHTMLError},
+        parser::{safe_parse_html, MalformedTagError, ParseHTMLError},
         structs::{AttributeValues, Attributes, Node, NodeType::*},
     };
 
