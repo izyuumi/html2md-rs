@@ -1,6 +1,10 @@
 #[cfg(test)]
 mod to_md_tests {
-    use html2md_rs::{parser::safe_parse_html, structs::Node, to_md::safe_from_html_to_md};
+    use html2md_rs::{
+        parser::safe_parse_html,
+        structs::{Node, NodeType, ToMdConfig},
+        to_md::{safe_from_html_to_md, safe_from_html_to_md_with_config},
+    };
 
     pub trait PrintNode {
         fn print_node(&self);
@@ -198,5 +202,19 @@ println!(\"{}\", z);
         input.print_node();
         let expected = "hello\n".to_string();
         assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn ignore_rendering() {
+        let input =
+            "<div><span>don't render this</span><p>this should be rendered</p><div>render this</div></div>".to_string();
+        let config = ToMdConfig {
+            ignore_rendering: vec![NodeType::Unknown("span".to_string())],
+        };
+        let expected = "this should be rendered\nrender this".to_string();
+        assert_eq!(
+            safe_from_html_to_md_with_config(input, &config).unwrap(),
+            expected
+        );
     }
 }

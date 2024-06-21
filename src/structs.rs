@@ -233,3 +233,8 @@ impl std::fmt::Display for AttributeValues {
         }
     }
 }
+
+#[derive(Debug, Default)]
+pub struct ToMdConfig {
+    pub ignore_rendering: Vec<NodeType>,
+}
