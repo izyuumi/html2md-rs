@@ -222,7 +222,7 @@ pub fn to_md_with_config(node: Node, config: &ToMdConfig) -> String {
 
     if follow_child {
         for child in node.children {
-            res.push_str(&to_md_with_config(child, &config));
+            res.push_str(&to_md_with_config(child, config));
         }
     }
 

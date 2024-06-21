@@ -362,7 +362,8 @@ fn modify_stack_with_node(stack: &mut Vec<Node>, mut new_node: Node) {
 /// * `parent` - A reference to the parent Node
 fn modify_node_with_parent(node: &mut Node, parent: &Node) {
     if parent.within_special_tag.is_some() {
-        node.within_special_tag = parent.within_special_tag.clone();
+        node.within_special_tag
+            .clone_from(&parent.within_special_tag)
     }
     if let Some(parent_tag_name) = &parent.tag_name {
         if parent_tag_name.is_special_tag() {
