@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/izyuumi/html2md-rs/compare/v0.9.0...v0.9.1) (2024-06-21)
+
+
+### Performance Improvements
+
+* **to_md:** use pattern binding for rendering headers ([ded0f3b](https://github.com/izyuumi/html2md-rs/commit/ded0f3bc5eb89b06e4cdc4304d51b21a56cae38d))
+
 ## [0.9.0](https://github.com/izyuumi/html2md-rs/compare/v0.8.2...v0.9.0) (2024-06-21)
 
 
