@@ -101,20 +101,22 @@ pub fn to_md_with_config(node: Node, config: &ToMdConfig) -> String {
     let mut follow_child = true; // If the function should process the children of the node, defaults to true. False for some tags; like <ul> and <ol>.
 
     if let Some(tag_type) = &node.tag_name {
-        match tag_type {
-            H1 | H2 | H3 | H4 | H5 | H6 => tail.push('\n'),
-            _ => (),
-        }
         if config.ignore_rendering.contains(tag_type) {
             follow_child = false;
         } else {
             match tag_type {
-                H1 => res.push_str("# "),
-                H2 => res.push_str("## "),
-                H3 => res.push_str("### "),
-                H4 => res.push_str("#### "),
-                H5 => res.push_str("##### "),
-                H6 => res.push_str("###### "),
+                h @ H1 | h @ H2 | h @ H3 | h @ H4 | h @ H5 | h @ H6 => {
+                    tail.push('\n');
+                    match h {
+                        H1 => res.push_str("# "),
+                        H2 => res.push_str("## "),
+                        H3 => res.push_str("### "),
+                        H4 => res.push_str("#### "),
+                        H5 => res.push_str("##### "),
+                        H6 => res.push_str("###### "),
+                        _ => (),
+                    }
+                }
                 Strong => {
                     res.push_str("**");
                     tail.push_str("**");
