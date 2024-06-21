@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.0](https://github.com/izyuumi/html2md-rs/compare/v0.8.2...v0.9.0) (2024-06-21)
+
+
+### Features
+
+* custom configuration for how to render md ([2fd820a](https://github.com/izyuumi/html2md-rs/commit/2fd820af919e466f7ae9d2c16edfb0a4d67bb7d7)), closes [#28](https://github.com/izyuumi/html2md-rs/issues/28)
+
+
+### Bug Fixes
+
+* fix cargo clippy issues ([32b5a9c](https://github.com/izyuumi/html2md-rs/commit/32b5a9c83e21a578ad5024531c08be6bc3f1258d))
+
 ## [0.8.2](https://github.com/izyuumi/html2md-rs/compare/v0.8.1...v0.8.2) (2024-04-26)
 
 
