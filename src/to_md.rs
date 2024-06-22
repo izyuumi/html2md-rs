@@ -15,11 +15,11 @@ use crate::{
 ///
 /// ```
 /// use html2md_rs::{
-///     to_md::to_md,
 ///     structs::{
 ///         Node,
-///         NodeType::{H1, Text},
+///         NodeType::{Text, H1},
 ///     },
+///     to_md::to_md,
 /// };
 ///
 /// let input = Node {
@@ -39,7 +39,6 @@ use crate::{
 ///
 /// assert_eq!(parsed, "# Hello world\n");
 /// ```
-///
 pub fn to_md(node: Node) -> String {
     to_md_with_config(node, &ToMdConfig::default())
 }
@@ -55,12 +54,12 @@ pub fn to_md(node: Node) -> String {
 /// # Example's
 /// ```
 /// use html2md_rs::{
-///     to_md::to_md_with_config,
 ///     structs::{
 ///         Node,
-///         NodeType::{Div, H1, P, Text},
+///         NodeType::{Div, Text, H1, P},
 ///         ToMdConfig,
 ///     },
+///     to_md::to_md_with_config,
 /// };
 ///
 /// let input = Node {
@@ -294,7 +293,10 @@ pub fn safe_from_html_to_md(input: String) -> Result<String, ParseHTMLError> {
 /// # Examples
 ///
 /// ```
-/// use html2md_rs::{to_md::safe_from_html_to_md_with_config, structs::{ToMdConfig, NodeType::P}};
+/// use html2md_rs::{
+///     structs::{NodeType::P, ToMdConfig},
+///     to_md::safe_from_html_to_md_with_config,
+/// };
 ///
 /// let input = "<h1>Hello world</h1><p>this will not be rendered</p>".to_string();
 /// let config = ToMdConfig {
