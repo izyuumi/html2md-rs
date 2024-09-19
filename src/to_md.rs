@@ -48,8 +48,7 @@ pub fn to_md(node: Node) -> String {
 /// # Arguments
 ///
 /// * `node` - A `Node` to be converted to markdown.
-/// * `config` - A custom configuration, `ToMdConfig`, to use to configure how to render the output
-/// markdown.
+/// * `config` - A custom configuration, `ToMdConfig`, to use to configure how to render the output markdown.
 ///
 /// # Example's
 /// ```

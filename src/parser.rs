@@ -9,7 +9,7 @@ use crate::structs::{
     AttributeValues, Attributes, Node,
     NodeType::{self, *},
 };
-use std::fmt::Display;
+use std::{collections::VecDeque, fmt::Display};
 
 /// Errors that will be returned when parsing malformed HTML tags
 #[derive(Debug, PartialEq, Eq)]
@@ -172,7 +172,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
         }
 
         if rest.starts_with('<') {
-            if let Some(mut closing_index) = rest.find('>') {
+            if let Some(mut closing_index) = find_closing_bracket_index(rest) {
                 // if the tag is a self-closing tag (i.e. <tag_name ... />)
                 let self_closing = if rest.chars().nth(closing_index - 1) == Some('/') {
                     // if the last character right before the closing bracket is a forward slash, the tag is self-closing
@@ -564,6 +564,27 @@ fn add_to_attribute_map(
     );
 }
 
+fn find_closing_bracket_index(rest: &str) -> Option<usize> {
+    let mut attribute_value_stack: VecDeque<char> = VecDeque::new(); // needed to fix #31
+    for (idx, char) in rest.chars().enumerate() {
+        if char.eq(&'"') || char.eq(&'\'') {
+            if let Some(back) = attribute_value_stack.back() {
+                if back.eq(&char) {
+                    attribute_value_stack.pop_back();
+                } else {
+                    attribute_value_stack.push_back(char)
+                }
+            } else {
+                attribute_value_stack.push_back(char)
+            }
+        }
+        if char.eq(&'>') && attribute_value_stack.is_empty() {
+            return Some(idx);
+        }
+    }
+    None
+}
+
 // https://github.com/izyuumi/html2md-rs/issues/25
 #[test]
 fn issue_25() {
@@ -580,4 +601,32 @@ fn issue_25() {
     ]);
     let parsed = parse_tag_attributes(&input, 0).unwrap().unwrap();
     assert_eq!(parsed, expected);
+}
+
+// https://github.com/izyuumi/html2md-rs/issues/31
+#[test]
+fn issue_31() {
+    let input = r#"<img src="https://exmaple.com/img.png" alt="Rust<br/>Logo"/>"#.to_string();
+    let expected = Node {
+        tag_name: Some(Unknown("img".to_string())),
+        value: None,
+        attributes: Some(Attributes {
+            id: None,
+            class: None,
+            attributes: std::collections::HashMap::from([
+                (
+                    "src".to_string(),
+                    AttributeValues::String("https://exmaple.com/img.png".to_string()),
+                ),
+                (
+                    "alt".to_string(),
+                    AttributeValues::String("Rust<br/>Logo".to_string()),
+                ),
+            ]),
+        }),
+        children: Vec::new(),
+        within_special_tag: None,
+    };
+    let parsed = safe_parse_html(input).unwrap();
+    assert_eq!(parsed, expected)
 }

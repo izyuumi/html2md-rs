@@ -138,9 +138,9 @@ impl Node {
 /// Represents the Attributes of an HTML element.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Attributes {
-    id: Option<String>,
-    class: Option<String>,
-    attributes: HashMap<String, AttributeValues>,
+    pub(crate) id: Option<String>,
+    pub(crate) class: Option<String>,
+    pub(crate) attributes: HashMap<String, AttributeValues>,
 }
 
 impl Attributes {
