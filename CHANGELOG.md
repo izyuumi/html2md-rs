@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/izyuumi/html2md-rs/compare/v0.9.1...v0.9.2) (2024-09-19)
+
+
+### Bug Fixes
+
+* safely parse angle brackets in attribute values ([4533121](https://github.com/izyuumi/html2md-rs/commit/4533121bb30752f17284d0a5975dd1fddf82a801)), closes [#31](https://github.com/izyuumi/html2md-rs/issues/31)
+
 ## [0.9.1](https://github.com/izyuumi/html2md-rs/compare/v0.9.0...v0.9.1) (2024-06-21)
 
 
