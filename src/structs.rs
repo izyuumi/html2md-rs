@@ -1,5 +1,3 @@
-// }
-
 use std::collections::HashMap;
 
 /// Represents the different types of HTML elements that the library supports.
@@ -156,14 +154,11 @@ impl Attributes {
     /// Returns the attribute value of the key passed in
     pub fn get(&self, key: &str) -> Option<AttributeValues> {
         match key {
-            "id" => self
-                .id
-                .as_ref()
-                .map(|id| AttributeValues::String(id.clone())),
+            "id" => self.id.as_ref().map(|id| AttributeValues::from(id.clone())),
             "class" => self
                 .class
                 .as_ref()
-                .map(|class| AttributeValues::String(class.clone())),
+                .map(|class| AttributeValues::from(class.clone())),
             _ => self.attributes.get(key).cloned(),
         }
     }
@@ -222,6 +217,52 @@ pub enum AttributeValues {
     Bool(bool),
     /// Represents an integer attribute value.
     Number(i32),
+}
+
+impl AttributeValues {
+    /// Creates a new `AttributeValues` instance from a value that can be converted into `AttributeValues`.
+    ///
+    /// This function uses the `Into` trait to allow for flexible type conversion.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use html2md_rs::structs::AttributeValues;
+    /// let string_value = AttributeValues::from("Hello, world!");
+    /// let bool_value = AttributeValues::from(true);
+    /// let number_value = AttributeValues::from(42);
+    /// ```
+    pub fn from<T: Into<AttributeValues>>(value: T) -> Self {
+        value.into()
+    }
+}
+
+impl From<String> for AttributeValues {
+    /// Converts a `String` into an `AttributeValues::String`.
+    fn from(value: String) -> Self {
+        AttributeValues::String(value)
+    }
+}
+
+impl From<&str> for AttributeValues {
+    /// Converts a string slice (`&str`) into an `AttributeValues::String`.
+    fn from(value: &str) -> Self {
+        AttributeValues::String(value.to_string())
+    }
+}
+
+impl From<bool> for AttributeValues {
+    /// Converts a `bool` into an `AttributeValues::Bool`.
+    fn from(value: bool) -> Self {
+        AttributeValues::Bool(value)
+    }
+}
+
+impl From<i32> for AttributeValues {
+    /// Converts an `i32` into an `AttributeValues::Number`.
+    fn from(value: i32) -> Self {
+        AttributeValues::Number(value)
+    }
 }
 
 impl std::fmt::Display for AttributeValues {

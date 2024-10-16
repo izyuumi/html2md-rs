@@ -497,7 +497,7 @@ fn parse_tag_attributes(
             // if the character is whitespace, if could be indicating the end of a key
             if !current_key.is_empty() {
                 // if the key has some value, add it to the attribute_map with value true
-                attribute_map.insert(current_key.clone(), AttributeValues::Bool(true));
+                attribute_map.insert(current_key.clone(), AttributeValues::from(true));
                 current_key.clear();
                 continue;
             }
@@ -560,7 +560,7 @@ fn add_to_attribute_map(
     }
     attribute_map.insert(
         current_key.to_string(),
-        AttributeValues::String(current_value_in_quotes.to_string()),
+        AttributeValues::from(current_value_in_quotes),
     );
 }
 
@@ -590,14 +590,8 @@ fn find_closing_bracket_index(rest: &str) -> Option<usize> {
 fn issue_25() {
     let input = "property=\"og:type\" content= \"website\"".to_string();
     let expected = Attributes::from(vec![
-        (
-            "property".to_string(),
-            AttributeValues::String("og:type".to_string()),
-        ),
-        (
-            "content".to_string(),
-            AttributeValues::String("website".to_string()),
-        ),
+        ("property".to_string(), AttributeValues::from("og:type")),
+        ("content".to_string(), AttributeValues::from("website")),
     ]);
     let parsed = parse_tag_attributes(&input, 0).unwrap().unwrap();
     assert_eq!(parsed, expected);
@@ -616,12 +610,9 @@ fn issue_31() {
             attributes: std::collections::HashMap::from([
                 (
                     "src".to_string(),
-                    AttributeValues::String("https://exmaple.com/img.png".to_string()),
+                    AttributeValues::from("https://exmaple.com/img.png"),
                 ),
-                (
-                    "alt".to_string(),
-                    AttributeValues::String("Rust<br/>Logo".to_string()),
-                ),
+                ("alt".to_string(), AttributeValues::from("Rust<br/>Logo")),
             ]),
         }),
         children: Vec::new(),

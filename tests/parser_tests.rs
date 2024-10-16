@@ -310,10 +310,7 @@ mod parser_tests {
     fn equal_in_attribute_value() {
         let input = "<div class=\"hello=world\"></div>".to_string();
         let mut attributes = Attributes::new();
-        attributes.insert(
-            "class".to_string(),
-            AttributeValues::String("hello=world".to_string()),
-        );
+        attributes.insert("class".to_string(), AttributeValues::from("hello=world"));
         let expected = Node {
             tag_name: Some(Div),
             attributes: Some(attributes),
@@ -330,11 +327,11 @@ mod parser_tests {
         let mut attributes = Attributes::new();
         attributes.insert(
             "http-equiv".to_string(),
-            AttributeValues::String("content-type".to_string()),
+            AttributeValues::from("content-type"),
         );
         attributes.insert(
             "content".to_string(),
-            AttributeValues::String("text/html; charset=utf-8".to_string()),
+            AttributeValues::from("text/html; charset=utf-8"),
         );
         let expected = Node {
             tag_name: Some(Meta),
@@ -349,18 +346,9 @@ mod parser_tests {
     fn issue_23() {
         let input = "<form id=\"search\" role=\"search\" action=/search></form>".to_string();
         let mut attributes = Attributes::new();
-        attributes.insert(
-            "id".to_string(),
-            AttributeValues::String("search".to_string()),
-        );
-        attributes.insert(
-            "role".to_string(),
-            AttributeValues::String("search".to_string()),
-        );
-        attributes.insert(
-            "action".to_string(),
-            AttributeValues::String("/search".to_string()),
-        );
+        attributes.insert("id".to_string(), AttributeValues::from("search"));
+        attributes.insert("role".to_string(), AttributeValues::from("search"));
+        attributes.insert("action".to_string(), AttributeValues::from("/search"));
         let expected = Node {
             tag_name: Some(Unknown("form".to_string())),
             attributes: Some(attributes),
