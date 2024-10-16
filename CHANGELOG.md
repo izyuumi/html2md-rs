@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/izyuumi/html2md-rs/compare/v0.9.2...v0.10.0) (2024-10-16)
+
+
+### Features
+
+* create AttributeValues::from() ([30b8ed5](https://github.com/izyuumi/html2md-rs/commit/30b8ed55064bbd4d3492f009a862a50200274240))
+
 ## [0.9.2](https://github.com/izyuumi/html2md-rs/compare/v0.9.1...v0.9.2) (2024-09-19)
 
 
