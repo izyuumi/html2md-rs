@@ -138,6 +138,7 @@ impl Node {
 pub struct Attributes {
     pub(crate) id: Option<String>,
     pub(crate) class: Option<String>,
+    pub(crate) href: Option<String>,
     pub(crate) attributes: HashMap<String, AttributeValues>,
 }
 
@@ -147,6 +148,7 @@ impl Attributes {
         Attributes {
             id: None,
             class: None,
+            href: None,
             attributes: HashMap::new(),
         }
     }
@@ -171,6 +173,14 @@ impl Attributes {
     /// Returns the class attribute of the element
     pub fn get_class(&self) -> Option<&String> {
         self.class.as_ref()
+    }
+
+    /// Return the href attribute of the element
+    pub fn get_href(&self) -> Option<String> {
+        self.get("href").and_then(|value| match value {
+            AttributeValues::String(href) => Some(href),
+            _ => None,
+        })
     }
 
     /// Returns the attributes of the element

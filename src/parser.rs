@@ -607,6 +607,7 @@ fn issue_31() {
         attributes: Some(Attributes {
             id: None,
             class: None,
+            href: None,
             attributes: std::collections::HashMap::from([
                 (
                     "src".to_string(),

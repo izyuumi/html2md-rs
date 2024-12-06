@@ -124,10 +124,19 @@ pub fn to_md_with_config(node: Node, config: &ToMdConfig) -> String {
                     tail.push('*');
                 }
                 A => {
-                    if let Some(link) = node.attributes.as_ref().and_then(|attrs| attrs.get("href"))
+                    if let Some(link) = node.attributes.as_ref().and_then(|attrs| attrs.get_href())
                     {
+                        let link = percent_encoding::percent_decode(link.as_bytes())
+                            .decode_utf8()
+                            .map(|s| s.to_string())
+                            .unwrap_or(link);
+
                         res.push('[');
-                        tail.push_str(&format!("]({})", link));
+                        if link.contains(' ') {
+                            tail.push_str(&format!("](<{}>)", link));
+                        } else {
+                            tail.push_str(&format!("]({})", link));
+                        }
                     } else {
                         res.push('[');
                         tail.push(']');
@@ -229,6 +238,18 @@ pub fn to_md_with_config(node: Node, config: &ToMdConfig) -> String {
     res.push_str(&tail);
 
     res
+}
+
+// https://github.com/izyuumi/html2md-rs/issues/34
+#[test]
+fn issue34() {
+    let input = "<p><a href=\"/my uri\">link</a></p>";
+    let expected = "[link](</my uri>)\n";
+    assert_eq!(safe_from_html_to_md(input.to_string()).unwrap(), expected);
+
+    let input = "<p><a href=\"/myuri\">link</a></p>";
+    let expected = "[link](/myuri)\n";
+    assert_eq!(safe_from_html_to_md(input.to_string()).unwrap(), expected);
 }
 
 /// Converts a string of HTML to a markdown string.

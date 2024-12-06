@@ -11,3 +11,6 @@ repository = "https://github.com/izyumidev/html2md-rs"
 license = "MIT"
 keywords = ["html", "markdown", "html2md", "html-to-markdown", "html-to-md"]
 categories = ["parsing"]
+
+[dependencies]
+percent-encoding = "2.3.1"
