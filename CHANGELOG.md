@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/izyuumi/html2md-rs/compare/v0.10.0...v0.10.1) (2024-12-06)
+
+
+### Bug Fixes
+
+* hrefs with whitespace wrapped in &lt;&gt; ([94e339c](https://github.com/izyuumi/html2md-rs/commit/94e339c3ce019dd0e7586c0b335f4144e8b132f8)), closes [#34](https://github.com/izyuumi/html2md-rs/issues/34)
+
 ## [0.10.0](https://github.com/izyuumi/html2md-rs/compare/v0.9.2...v0.10.0) (2024-10-16)
 
 
