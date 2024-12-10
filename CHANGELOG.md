@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.2](https://github.com/izyuumi/html2md-rs/compare/v0.10.1...v0.10.2) (2024-12-10)
+
+
+### Bug Fixes
+
+* support non-ASCII input ([8ac6684](https://github.com/izyuumi/html2md-rs/commit/8ac6684d03754affdeb316645d1217158601cb4f))
+
 ## [0.10.1](https://github.com/izyuumi/html2md-rs/compare/v0.10.0...v0.10.1) (2024-12-06)
 
 
