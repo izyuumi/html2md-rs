@@ -190,7 +190,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
                 // initialize the node name and attribute map
                 let node_name;
                 let mut attribute_map = None;
-                if let Some(space_index) = tag_content.find(' ') {
+                if let Some(space_index) = tag_content.find(|c: char| c.is_whitespace()) {
                     // if the tag contains a space, split the tag into the node name and attributes
                     // space_index is the index of the first spce
                     // node_name is the tag name (i.e. <tag_name ...>)
@@ -566,7 +566,7 @@ fn add_to_attribute_map(
 
 fn find_closing_bracket_index(rest: &str) -> Option<usize> {
     let mut attribute_value_stack: VecDeque<char> = VecDeque::new(); // needed to fix #31
-    for (idx, char) in rest.chars().enumerate() {
+    for (idx, char) in rest.char_indices() {
         if char.eq(&'"') || char.eq(&'\'') {
             if let Some(back) = attribute_value_stack.back() {
                 if back.eq(&char) {
@@ -621,4 +621,39 @@ fn issue_31() {
     };
     let parsed = safe_parse_html(input).unwrap();
     assert_eq!(parsed, expected)
+}
+
+// https://github.com/izyuumi/html2md-rs/issues/36
+#[test]
+fn issue_36() {
+    let input = "<img src=\"https://hoerspiele.dra.de/fileadmin/www.hoerspiele.dra.de/images/vollinfo/4970918_B01.jpg\" />".to_string();
+    let expected = Node {
+        tag_name: Some(Unknown("img".to_string())),
+        value: None,
+        attributes: Some(Attributes {
+            id: None,
+            class: None,
+            href: None,
+            attributes: std::collections::HashMap::from([(
+                "src".to_string(),
+                AttributeValues::from("https://hoerspiele.dra.de/fileadmin/www.hoerspiele.dra.de/images/vollinfo/4970918_B01.jpg"),
+            )]),
+        }),
+        children: Vec::new(),
+        within_special_tag: None,
+    };
+    let parsed = safe_parse_html(input).unwrap();
+    assert_eq!(parsed, expected);
+
+    let input = r#"<!DOCTYPE html><meta http-equiv="content-type" content="text/html; charset=utf-8"><div class="column"><div class="gallery-wrap single">
+    <div class="gallery-container">
+        <figure class="image">
+            <figure class="image">
+            <img title="Illustration »Der dunkle Kongress« © ARD / Jürgen Frey"
+                 alt="Illustration »Der dunkle Kongress« © ARD / Jürgen Frey" 
+                 src="https://hoerspiele.dra.de/fileadmin/www.hoerspiele.dra.de/images/vollinfo/4970918_B01.jpg">
+                <figcaption class="image-caption">Illustration »Der dunkle Kongress«
+© ARD / Jürgen Frey</figcaption>
+</figure></div></div></div>"#.to_string();
+    safe_parse_html(input).unwrap();
 }
