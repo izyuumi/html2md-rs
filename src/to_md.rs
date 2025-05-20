@@ -170,7 +170,7 @@ pub fn to_md_with_config(node: Node, config: &ToMdConfig) -> String {
                     follow_child = false;
                 }
                 Li => {
-                    if !&node.children.iter().any(|child| child.tag_name == Some(P)) {
+                    if !node.children.iter().any(|child| child.tag_name == Some(P)) {
                         tail.push('\n');
                     }
                 }
