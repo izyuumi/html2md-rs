@@ -102,14 +102,15 @@ impl Node {
     pub fn leading_spaces(&self) -> String {
         let ul_or_ol = &[NodeType::Ul, NodeType::Ol];
         if let Some(within_special_tag) = &self.within_special_tag {
-            " ".repeat(
-                (within_special_tag
-                    .iter()
-                    .filter(|tag| ul_or_ol.contains(tag))
-                    .count()
-                    - 1)
-                    * 2,
-            )
+            let count = within_special_tag
+                .iter()
+                .filter(|tag| ul_or_ol.contains(tag))
+                .count();
+            if count > 0 {
+                " ".repeat((count - 1) * 2)
+            } else {
+                String::new()
+            }
         } else {
             String::new()
         }
