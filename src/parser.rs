@@ -1,4 +1,4 @@
-//! This module contains functions which parsees HTML string into a custom Node struct.
+//! This module contains functions which parse HTML strings into a custom Node struct.
 //!
 //! The Node struct is used to represent the HTML elements and their children in a tree-like structure.
 //!

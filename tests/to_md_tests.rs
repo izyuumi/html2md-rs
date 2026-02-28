@@ -118,6 +118,13 @@ println!(\"{}\", z);
     }
 
     #[test]
+    fn code_block_no_leading_newline() {
+        let input = "<pre><code class=\"language-rust\">println!(\"hi\");</code></pre>".to_string();
+        let expected = "```rust\nprintln!(\"hi\");\n```\n".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
     fn line_break() {
         let input = "<p>hello<br />world</p>".to_string();
         let expected = "hello  \nworld\n".to_string();
