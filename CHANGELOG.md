@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.11.0](https://github.com/izyuumi/html2md-rs/compare/v0.10.2...v0.11.0) (2026-08-09)
+
 ### Breaking Changes
 
 * add `Node::self_closing`; exhaustive `Node` struct literals must initialize the new field
@@ -17,6 +19,7 @@
 * parse `script`, `style`, `textarea`, and `title` contents as raw text while suppressing `script` and `style` output
 * accept single-quoted and empty quoted attribute values
 * add 100 focused parser and renderer regression tests
+* enforce non-panicking production internals outside the deprecated compatibility wrapper
 
 ### Fixed
 
