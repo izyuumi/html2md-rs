@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.12.0](https://github.com/izyuumi/html2md-rs/compare/v0.11.0...v0.12.0) (2026-08-10)
+
 ### Breaking Changes
 
 * mark `Node` as non-exhaustive; use `Node::new` instead of external struct literals
