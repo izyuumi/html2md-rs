@@ -29,6 +29,12 @@ fn safe_apis_do_not_panic_on_malformed_or_non_ascii_input() {
 
 #[test]
 fn converts_and_drops_deep_elements_without_overflowing() {
+    let ordinary = safe_parse_html(
+        "<ol start='2'><li><strong id='x'>one</strong></li><li>two</li></ol>".to_string(),
+    )
+    .unwrap();
+    assert_eq!(ordinary.clone(), ordinary);
+
     const RENDER_DEPTH: usize = 10_000;
     let input = format!(
         "{}x{}",
@@ -44,5 +50,15 @@ fn converts_and_drops_deep_elements_without_overflowing() {
         "<div>".repeat(DROP_DEPTH),
         "</div>".repeat(DROP_DEPTH)
     );
-    drop(safe_parse_html(input).unwrap());
+    let node = safe_parse_html(input).unwrap();
+    let cloned = node.clone();
+
+    let mut cursor = &cloned;
+    for _ in 0..DROP_DEPTH {
+        assert_eq!(cursor.children.len(), 1);
+        cursor = &cursor.children[0];
+    }
+    assert_eq!(cursor.value.as_deref(), Some("x"));
+
+    drop((node, cloned));
 }

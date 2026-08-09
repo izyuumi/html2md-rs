@@ -126,7 +126,7 @@ impl NodeType {
 }
 
 /// Represents a node in the HTML tree.
-#[derive(Debug, PartialEq, Eq, Clone, Default)]
+#[derive(Debug, PartialEq, Eq, Default)]
 pub struct Node {
     /// Element type, or `None` for a synthetic container.
     pub tag_name: Option<NodeType>,
@@ -140,6 +140,78 @@ pub struct Node {
     pub within_special_tag: Option<Vec<NodeType>>,
     /// Child nodes in source order.
     pub children: Vec<Node>,
+}
+
+impl Clone for Node {
+    fn clone(&self) -> Self {
+        fn without_children(source: &Node) -> Node {
+            Node {
+                tag_name: source.tag_name.clone(),
+                value: source.value.clone(),
+                attributes: source.attributes.clone(),
+                self_closing: source.self_closing,
+                within_special_tag: source.within_special_tag.clone(),
+                children: Vec::with_capacity(source.children.len()),
+            }
+        }
+
+        struct Frame<'a> {
+            source: &'a Node,
+            cloned: Node,
+            next_child: usize,
+        }
+
+        impl<'a> Frame<'a> {
+            fn new(source: &'a Node) -> Self {
+                Self {
+                    source,
+                    cloned: without_children(source),
+                    next_child: 0,
+                }
+            }
+        }
+
+        let mut frames = Vec::with_capacity(32);
+        frames.push(Frame::new(self));
+
+        loop {
+            let next_child = {
+                let frame = frames.last_mut().expect("clone stack starts non-empty");
+                if frame.next_child < frame.source.children.len() {
+                    let source = frame.source;
+                    let index = frame.next_child;
+                    frame.next_child += 1;
+                    Some(&source.children[index])
+                } else {
+                    None
+                }
+            };
+
+            if let Some(child) = next_child {
+                if child.children.is_empty() {
+                    frames
+                        .last_mut()
+                        .expect("parent clone frame must exist")
+                        .cloned
+                        .children
+                        .push(without_children(child));
+                } else {
+                    frames.push(Frame::new(child));
+                }
+                continue;
+            }
+
+            let completed = frames
+                .pop()
+                .expect("completed clone frame must exist")
+                .cloned;
+            if let Some(parent) = frames.last_mut() {
+                parent.cloned.children.push(completed);
+            } else {
+                return completed;
+            }
+        }
+    }
 }
 
 impl Drop for Node {
