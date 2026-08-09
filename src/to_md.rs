@@ -299,7 +299,7 @@ pub fn to_md_with_config(node: Node, config: &ToMdConfig) -> String {
                             H4 => "#### ",
                             H5 => "##### ",
                             H6 => "###### ",
-                            _ => unreachable!(),
+                            _ => "",
                         });
                     }
                     Strong => {
@@ -427,7 +427,10 @@ pub fn to_md_with_config(node: Node, config: &ToMdConfig) -> String {
                         push_children(&mut stack, children, text_mode);
                     }
                     Pre => {
-                        if children.len() == 1 && children[0].tag_name == Some(Code) {
+                        if children
+                            .first()
+                            .is_some_and(|child| child.tag_name == Some(Code))
+                        {
                             let Some(code) = children.pop() else {
                                 continue;
                             };
@@ -505,7 +508,7 @@ fn issue34() {
 /// ```
 #[deprecated(
     since = "0.7.0",
-    note = "This function is deprecated and will be removed in future versions. Please use the safe_parse_html function instead."
+    note = "This function is deprecated and will be removed in future versions. Please use safe_from_html_to_md instead."
 )]
 #[allow(deprecated)]
 pub fn from_html_to_md(input: String) -> String {

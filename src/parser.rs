@@ -259,12 +259,11 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
                     // if the tag is a closing tag, pop the last node from the stack and add it to the parent
                     match stack.pop() {
                         Some(last_node) => {
-                            if stack.is_empty() {
+                            if let Some(parent) = stack.last_mut() {
+                                parent.children.push(last_node);
+                            } else {
                                 // if the stack is empty, the last node is the root node
                                 nodes.push(last_node);
-                            } else {
-                                let parent = stack.last_mut().unwrap(); // stack is not empty, so unwrap is safe
-                                parent.children.push(last_node);
                             }
                             current_index += closing_index + 1;
                             continue;
@@ -504,6 +503,7 @@ fn modify_node_with_parent(node: &mut Node, parent: &Node) {
     since = "0.7.0",
     note = "This function is deprecated and will be removed in future versions. Please use the safe_parse_html function instead."
 )]
+#[allow(clippy::panic)]
 pub fn parse_html(input: String) -> Node {
     let parsed = safe_parse_html(input);
     match parsed {

@@ -28,6 +28,34 @@ fn safe_apis_do_not_panic_on_malformed_or_non_ascii_input() {
 }
 
 #[test]
+fn safe_apis_do_not_panic_on_generated_utf8_input() {
+    const ALPHABET: [char; 16] = [
+        '<', '>', '/', '!', '-', '=', '\'', '"', '&', ';', ' ', '\0', 'é', '日', '😀', '\n',
+    ];
+    let mut state = 0x4d59_5df4_d0f3_3173_u64;
+
+    for case in 0..10_000 {
+        let length = case % 128;
+        let mut input = String::with_capacity(length);
+        for _ in 0..length {
+            state = state
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1);
+            input.push(ALPHABET[(state as usize) % ALPHABET.len()]);
+        }
+
+        assert!(
+            catch_unwind(|| safe_parse_html(input.clone())).is_ok(),
+            "safe_parse_html panicked for generated case {case}: {input:?}"
+        );
+        assert!(
+            catch_unwind(|| safe_from_html_to_md(input.clone())).is_ok(),
+            "safe_from_html_to_md panicked for generated case {case}: {input:?}"
+        );
+    }
+}
+
+#[test]
 fn converts_and_drops_deep_elements_without_overflowing() {
     let ordinary = safe_parse_html(
         "<ol start='2'><li><strong id='x'>one</strong></li><li>two</li></ol>".to_string(),

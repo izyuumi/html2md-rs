@@ -176,35 +176,30 @@ impl Clone for Node {
 
         loop {
             let next_child = {
-                let frame = frames.last_mut().expect("clone stack starts non-empty");
-                if frame.next_child < frame.source.children.len() {
-                    let source = frame.source;
-                    let index = frame.next_child;
+                let Some(frame) = frames.last_mut() else {
+                    return without_children(self);
+                };
+                frame.source.children.get(frame.next_child).map(|child| {
                     frame.next_child += 1;
-                    Some(&source.children[index])
-                } else {
-                    None
-                }
+                    child
+                })
             };
 
             if let Some(child) = next_child {
                 if child.children.is_empty() {
-                    frames
-                        .last_mut()
-                        .expect("parent clone frame must exist")
-                        .cloned
-                        .children
-                        .push(without_children(child));
+                    let Some(parent) = frames.last_mut() else {
+                        return without_children(self);
+                    };
+                    parent.cloned.children.push(without_children(child));
                 } else {
                     frames.push(Frame::new(child));
                 }
                 continue;
             }
 
-            let completed = frames
-                .pop()
-                .expect("completed clone frame must exist")
-                .cloned;
+            let Some(completed) = frames.pop().map(|frame| frame.cloned) else {
+                return without_children(self);
+            };
             if let Some(parent) = frames.last_mut() {
                 parent.cloned.children.push(completed);
             } else {
