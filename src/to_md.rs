@@ -122,6 +122,63 @@ fn inline_code(content: String) -> String {
     }
 }
 
+fn hex_digit(nibble: u8) -> char {
+    char::from(if nibble < 10 {
+        b'0' + nibble
+    } else {
+        b'A' + nibble - 10
+    })
+}
+
+fn push_percent_encoded(output: &mut String, character: char) {
+    let mut buffer = [0; 4];
+    for byte in character.encode_utf8(&mut buffer).bytes() {
+        output.push('%');
+        output.push(hex_digit(byte >> 4));
+        output.push(hex_digit(byte & 0x0f));
+    }
+}
+
+fn requires_angle_brackets(link: &str) -> bool {
+    let mut depth = 0usize;
+    for character in link.chars() {
+        match character {
+            character if character.is_whitespace() || matches!(character, '<' | '>' | '\\') => {
+                return true
+            }
+            '(' => depth = depth.saturating_add(1),
+            ')' if depth == 0 => return true,
+            ')' => depth -= 1,
+            _ => {}
+        }
+    }
+    depth != 0
+}
+
+fn markdown_link_destination(link: &str) -> String {
+    let use_angle_brackets = requires_angle_brackets(link);
+    let mut output = String::with_capacity(link.len() + usize::from(use_angle_brackets) * 2);
+
+    if use_angle_brackets {
+        output.push('<');
+    }
+    for character in link.chars() {
+        if character.is_control() {
+            push_percent_encoded(&mut output, character);
+        } else {
+            if use_angle_brackets && matches!(character, '<' | '>' | '\\') {
+                output.push('\\');
+            }
+            output.push(character);
+        }
+    }
+    if use_angle_brackets {
+        output.push('>');
+    }
+
+    output
+}
+
 fn push_html_attribute(output: &mut String, key: &str, value: &str) {
     output.push(' ');
     output.push_str(key);
@@ -322,16 +379,7 @@ pub fn to_md_with_config(node: Node, config: &ToMdConfig) -> String {
                         let tail = if let Some(link) =
                             attributes.as_ref().and_then(|attrs| attrs.get_href())
                         {
-                            // TODO: Percent-decoding can prevent exact href round-tripping.
-                            let link = percent_encoding::percent_decode(link.as_bytes())
-                                .decode_utf8()
-                                .map(|decoded| decoded.into_owned())
-                                .unwrap_or(link);
-                            if link.contains(' ') {
-                                format!("](<{}>)", link)
-                            } else {
-                                format!("]({})", link)
-                            }
+                            format!("]({})", markdown_link_destination(&link))
                         } else {
                             "]".to_string()
                         };
@@ -491,6 +539,10 @@ fn issue34() {
 
     let input = "<p><a href=\"/myuri\">link</a></p>";
     let expected = "[link](/myuri)\n";
+    assert_eq!(safe_from_html_to_md(input.to_string()).unwrap(), expected);
+
+    let input = "<p><a href=\"/my%20uri\">link</a></p>";
+    let expected = "[link](/my%20uri)\n";
     assert_eq!(safe_from_html_to_md(input.to_string()).unwrap(), expected);
 }
 

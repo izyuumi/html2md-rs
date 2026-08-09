@@ -99,6 +99,41 @@ mod to_md_tests {
     }
 
     #[test]
+    fn link_preserves_percent_encoded_reserved_characters() {
+        let input = "<a href='https://example.com/a%2Fb%3Fc%23d'>link</a>".to_string();
+        let expected = "[link](https://example.com/a%2Fb%3Fc%23d)".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn link_with_unbalanced_parenthesis_uses_angle_destination() {
+        let input = "<a href='https://example.com/a(b'>link</a>".to_string();
+        let expected = "[link](<https://example.com/a(b>)".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn link_with_balanced_parentheses_stays_bare() {
+        let input = "<a href='https://example.com/a(b)c'>link</a>".to_string();
+        let expected = "[link](https://example.com/a(b)c)".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn link_escapes_angle_brackets_and_backslashes_in_angle_destination() {
+        let input = r#"<a href='https://example.com/a<b>\c'>link</a>"#.to_string();
+        let expected = r#"[link](<https://example.com/a\<b\>\\c>)"#.to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn link_encodes_line_and_control_characters() {
+        let input = "<a href='https://example.com/a b\nc\td\u{7f}\u{85}'>link</a>".to_string();
+        let expected = "[link](<https://example.com/a b%0Ac%09d%7F%C2%85>)".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
     fn code_block() {
         let input = "<pre><code class=\"language-rust\">
 let x: i32 = 123;

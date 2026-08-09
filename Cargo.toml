@@ -12,6 +12,3 @@ license = "MIT"
 keywords = ["html", "markdown", "html2md", "html-to-markdown", "html-to-md"]
 categories = ["parsing"]
 exclude = ["/.github", "/.gitignore", "/justfile", "/rustfmt.toml"]
-
-[dependencies]
-percent-encoding = "2.3.1"
