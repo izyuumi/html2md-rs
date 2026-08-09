@@ -3,12 +3,15 @@ use std::borrow::Cow;
 pub(crate) fn decode_html_entities(input: &str) -> Cow<'_, str> {
     let mut output: Option<String> = None;
     let mut copied_until = 0;
+    let mut scan_from = 0;
 
-    for (start, _) in input.match_indices('&') {
-        let Some(end_offset) = input[start + 1..].find(';') else {
+    while let Some(end_offset) = input[scan_from..].find(';') {
+        let end = scan_from + end_offset;
+        let Some(start_offset) = input[scan_from..end].rfind('&') else {
+            scan_from = end + 1;
             continue;
         };
-        let end = start + end_offset + 1;
+        let start = scan_from + start_offset;
         let entity = &input[start + 1..end];
         let decoded = match entity {
             "amp" => Some('&'),
@@ -34,6 +37,7 @@ pub(crate) fn decode_html_entities(input: &str) -> Cow<'_, str> {
             output.push(decoded);
             copied_until = end + 1;
         }
+        scan_from = end + 1;
     }
 
     match output {
@@ -42,6 +46,19 @@ pub(crate) fn decode_html_entities(input: &str) -> Cow<'_, str> {
             Cow::Owned(output)
         }
         None => Cow::Borrowed(input),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::decode_html_entities;
+
+    #[test]
+    fn entity_scan_handles_many_false_starts() {
+        let input = format!("{}amp;", "&".repeat(100_000));
+        let expected = "&".repeat(100_000);
+
+        assert_eq!(decode_html_entities(&input), expected);
     }
 }
 
