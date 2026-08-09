@@ -57,13 +57,53 @@ jobs:
   publish:
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [validate, msrv, semver]
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Verify signed tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag_object="$(
+            gh api \
+              "repos/${GITHUB_REPOSITORY}/git/ref/tags/${GITHUB_REF_NAME}" \
+              --jq '.object.sha'
+          )"
+          verified="$(
+            gh api \
+              "repos/${GITHUB_REPOSITORY}/git/tags/${tag_object}" \
+              --jq '.verification.verified'
+          )"
+          test "${verified}" = "true"
       - name: Match tag to crate version
         run: |
           crate_version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')"
           test "v${crate_version}" = "${GITHUB_REF_NAME}"
       - name: Release Crate
-        run: cargo publish --token ${{ secrets.CARGO_PUBLISH_TOKEN }}
+        run: cargo publish --token "${{ secrets.CARGO_PUBLISH_TOKEN }}"
+
+  github-release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: publish
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            gh release edit "${GITHUB_REF_NAME}" \
+              --verify-tag \
+              --latest
+          else
+            gh release create "${GITHUB_REF_NAME}" \
+              --verify-tag \
+              --generate-notes \
+              --latest
+          fi
