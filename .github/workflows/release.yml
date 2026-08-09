@@ -15,7 +15,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install stable Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -36,7 +36,7 @@ jobs:
   msrv:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Rust 1.70
         uses: dtolnay/rust-toolchain@1.70.0
       - name: Check minimum supported Rust version
@@ -48,7 +48,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Match tag to crate version
         run: |
           crate_version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')"
