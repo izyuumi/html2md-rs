@@ -486,33 +486,6 @@ fn issue34() {
     assert_eq!(safe_from_html_to_md(input.to_string()).unwrap(), expected);
 }
 
-/// Converts a string of HTML to a markdown string.
-///
-/// Panics if the HTML is invalid.
-///
-/// # Arguments
-///
-/// * `input` - A string of HTML to be converted to markdown.
-///
-/// # Examples
-///
-/// ```
-/// use html2md_rs::to_md::from_html_to_md;
-///
-/// let input = "<h1>Hello world</h1>".to_string();
-/// let parsed = from_html_to_md(input);
-///
-/// assert_eq!(parsed, "# Hello world\n");
-/// ```
-#[deprecated(
-    since = "0.7.0",
-    note = "This function is deprecated and will be removed in future versions. Please use safe_from_html_to_md instead."
-)]
-#[allow(deprecated)]
-pub fn from_html_to_md(input: String) -> String {
-    to_md(crate::parser::parse_html(input))
-}
-
 /// Safely converts a string of HTML to a markdown string.
 ///
 /// Returns an error if the HTML is invalid.

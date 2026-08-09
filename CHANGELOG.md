@@ -5,6 +5,7 @@
 ### Breaking Changes
 
 * mark `Node` as non-exhaustive; use `Node::new` instead of external struct literals
+* remove deprecated panicking `parse_html` and `from_html_to_md`; use the safe `Result` APIs
 
 ### Added
 

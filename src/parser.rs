@@ -5,8 +5,7 @@
 //! bodies are preserved.
 //! Supported element names map to their `NodeType` variants; all others become `NodeType::Unknown`.
 //!
-//! With the `safe_parse_html` function, malformed HTML will return an error instead of panicking.
-//! The `parse_html` function is a wrapper around `safe_parse_html` that panics if the input is malformed. However, it is deprecated and will be removed in future versions.
+//! [`safe_parse_html`] returns a structured error for malformed input.
 
 use crate::structs::{
     AttributeValues, Attributes, Node,
@@ -452,56 +451,6 @@ fn modify_node_with_parent(node: &mut Node, parent: &Node) {
                 node.within_special_tag = Some(vec![parent_tag_name.clone()]);
             }
         }
-    }
-}
-
-/// Parses a string of HTML into a Node struct
-///
-/// Panics if the input is malformed
-///
-/// # Arguments
-///
-/// * `input` - A string slice that holds the HTML to be parsed
-///
-/// # Examples
-///
-/// ```
-/// use html2md_rs::{
-///     parser::parse_html,
-///     structs::{
-///         Node,
-///         NodeType::{Div, Text},
-///     },
-/// };
-///
-/// let input = "<div>hello</div>".to_string();
-/// let parsed = parse_html(input);
-/// let expected = Node::new(
-///     Some(Div),
-///     None,
-///     None,
-///     None,
-///     vec![Node::new(
-///         Some(Text),
-///         Some("hello".to_string()),
-///         None,
-///         None,
-///         Vec::new(),
-///     )],
-/// );
-///
-/// assert_eq!(parsed, expected);
-/// ```
-#[deprecated(
-    since = "0.7.0",
-    note = "This function is deprecated and will be removed in future versions. Please use the safe_parse_html function instead."
-)]
-#[allow(clippy::panic)]
-pub fn parse_html(input: String) -> Node {
-    let parsed = safe_parse_html(input);
-    match parsed {
-        Ok(node) => node,
-        Err(err) => panic!("error parsing html: {:?}", err),
     }
 }
 
