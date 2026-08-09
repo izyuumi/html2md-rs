@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+### Breaking Changes
+
+* mark `Node` as non-exhaustive; use `Node::new` instead of external struct literals
+
+### Added
+
+* add `Node::with_self_closing` for constructing explicitly self-closing nodes
+
 ## [0.11.0](https://github.com/izyuumi/html2md-rs/compare/v0.10.2...v0.11.0) (2026-08-09)
 
 ### Breaking Changes

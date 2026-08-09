@@ -127,6 +127,7 @@ impl NodeType {
 
 /// Represents a node in the HTML tree.
 #[derive(Default)]
+#[non_exhaustive]
 pub struct Node {
     /// Element type, or `None` for a synthetic container.
     pub tag_name: Option<NodeType>,
@@ -404,6 +405,13 @@ impl Node {
             within_special_tag,
             children,
         }
+    }
+
+    /// Sets whether this node uses self-closing or HTML void-element semantics.
+    #[must_use]
+    pub fn with_self_closing(mut self, self_closing: bool) -> Self {
+        self.self_closing = self_closing;
+        self
     }
 }
 

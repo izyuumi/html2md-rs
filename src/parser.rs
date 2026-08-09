@@ -108,21 +108,19 @@ impl Display for ParseHTMLError {
 ///
 /// let input = "<div>hello</div>".to_string();
 /// let parsed = safe_parse_html(input);
-/// let expected = Node {
-///     tag_name: Some(Div),
-///     value: None,
-///     within_special_tag: None,
-///     attributes: None,
-///     children: vec![Node {
-///         tag_name: Some(Text),
-///         value: Some("hello".to_string()),
-///         attributes: None,
-///         self_closing: false,
-///         within_special_tag: None,
-///         children: Vec::new(),
-///     }],
-///     self_closing: false,
-/// };
+/// let expected = Node::new(
+///     Some(Div),
+///     None,
+///     None,
+///     None,
+///     vec![Node::new(
+///         Some(Text),
+///         Some("hello".to_string()),
+///         None,
+///         None,
+///         Vec::new(),
+///     )],
+/// );
 ///
 /// assert_eq!(parsed, Ok(expected));
 /// ```
@@ -478,21 +476,19 @@ fn modify_node_with_parent(node: &mut Node, parent: &Node) {
 ///
 /// let input = "<div>hello</div>".to_string();
 /// let parsed = parse_html(input);
-/// let expected = Node {
-///     tag_name: Some(Div),
-///     value: None,
-///     attributes: None,
-///     within_special_tag: None,
-///     children: vec![Node {
-///         tag_name: Some(Text),
-///         value: Some("hello".to_string()),
-///         attributes: None,
-///         self_closing: false,
-///         within_special_tag: None,
-///         children: Vec::new(),
-///     }],
-///     self_closing: false,
-/// };
+/// let expected = Node::new(
+///     Some(Div),
+///     None,
+///     None,
+///     None,
+///     vec![Node::new(
+///         Some(Text),
+///         Some("hello".to_string()),
+///         None,
+///         None,
+///         Vec::new(),
+///     )],
+/// );
 ///
 /// assert_eq!(parsed, expected);
 /// ```

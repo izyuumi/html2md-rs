@@ -178,21 +178,19 @@ fn unknown_opening_tag(tag: &str, attributes: Option<&Attributes>, self_closing:
 ///     to_md::to_md,
 /// };
 ///
-/// let input = Node {
-///     tag_name: Some(H1),
-///     value: None,
-///     attributes: None,
-///     self_closing: false,
-///     within_special_tag: None,
-///     children: vec![Node {
-///         tag_name: Some(Text),
-///         value: Some("Hello world".to_string()),
-///         attributes: None,
-///         self_closing: false,
-///         within_special_tag: None,
-///         children: Vec::new(),
-///     }],
-/// };
+/// let input = Node::new(
+///     Some(H1),
+///     None,
+///     None,
+///     None,
+///     vec![Node::new(
+///         Some(Text),
+///         Some("Hello world".to_string()),
+///         None,
+///         None,
+///         Vec::new(),
+///     )],
+/// );
 /// let parsed = to_md(input);
 ///
 /// assert_eq!(parsed, "# Hello world\n");

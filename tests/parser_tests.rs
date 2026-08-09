@@ -8,66 +8,59 @@ mod parser_tests {
     #[test]
     fn parse_simple_div_with_text() {
         let input = "<div>hello</div>".to_string();
-        let expected = Node {
-            tag_name: Some(Div),
-            value: None,
-            attributes: None,
-            self_closing: false,
-            within_special_tag: None,
-            children: vec![Node {
-                tag_name: Some(Text),
-                value: Some("hello".to_string()),
-                attributes: None,
-                self_closing: false,
-                within_special_tag: None,
-                children: vec![],
-            }],
-        };
+        let expected = Node::new(
+            Some(Div),
+            None,
+            None,
+            None,
+            vec![Node::new(
+                Some(Text),
+                Some("hello".to_string()),
+                None,
+                None,
+                vec![],
+            )],
+        );
         assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
     #[test]
     fn parse_multiple_headers() {
         let input = "<h1>hello</h1><h2>world</h2>".to_string();
-        let expected = Node {
-            tag_name: None,
-            value: None,
-            attributes: None,
-            self_closing: false,
-            within_special_tag: None,
-            children: vec![
-                Node {
-                    tag_name: Some(H1),
-                    value: None,
-                    attributes: None,
-                    self_closing: false,
-                    within_special_tag: None,
-                    children: vec![Node {
-                        tag_name: Some(Text),
-                        value: Some("hello".to_string()),
-                        attributes: None,
-                        self_closing: false,
-                        within_special_tag: None,
-                        children: vec![],
-                    }],
-                },
-                Node {
-                    tag_name: Some(H2),
-                    value: None,
-                    attributes: None,
-                    self_closing: false,
-                    within_special_tag: None,
-                    children: vec![Node {
-                        tag_name: Some(Text),
-                        value: Some("world".to_string()),
-                        attributes: None,
-                        self_closing: false,
-                        within_special_tag: None,
-                        children: vec![],
-                    }],
-                },
+        let expected = Node::new(
+            None,
+            None,
+            None,
+            None,
+            vec![
+                Node::new(
+                    Some(H1),
+                    None,
+                    None,
+                    None,
+                    vec![Node::new(
+                        Some(Text),
+                        Some("hello".to_string()),
+                        None,
+                        None,
+                        vec![],
+                    )],
+                ),
+                Node::new(
+                    Some(H2),
+                    None,
+                    None,
+                    None,
+                    vec![Node::new(
+                        Some(Text),
+                        Some("world".to_string()),
+                        None,
+                        None,
+                        vec![],
+                    )],
+                ),
             ],
-        };
+        );
         assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
@@ -154,14 +147,7 @@ mod parser_tests {
     #[test]
     fn self_closing_div() {
         let input = "<div />".to_string();
-        let expected = Node {
-            tag_name: Some(Div),
-            value: None,
-            attributes: None,
-            self_closing: true,
-            within_special_tag: None,
-            children: vec![],
-        };
+        let expected = Node::new(Some(Div), None, None, None, vec![]).with_self_closing(true);
         assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
@@ -170,38 +156,28 @@ mod parser_tests {
         let input = "<div>hello</div>
 <div />"
             .to_string();
-        let expected = Node {
-            tag_name: None,
-            value: None,
-            attributes: None,
-            self_closing: false,
-            within_special_tag: None,
-            children: vec![
-                Node {
-                    tag_name: Some(Div),
-                    value: None,
-                    attributes: None,
-                    self_closing: false,
-                    within_special_tag: None,
-                    children: vec![Node {
-                        tag_name: Some(Text),
-                        value: Some("hello".to_string()),
-                        attributes: None,
-                        self_closing: false,
-                        within_special_tag: None,
-                        children: vec![],
-                    }],
-                },
-                Node {
-                    tag_name: Some(Div),
-                    value: None,
-                    attributes: None,
-                    self_closing: true,
-                    within_special_tag: None,
-                    children: vec![],
-                },
+        let expected = Node::new(
+            None,
+            None,
+            None,
+            None,
+            vec![
+                Node::new(
+                    Some(Div),
+                    None,
+                    None,
+                    None,
+                    vec![Node::new(
+                        Some(Text),
+                        Some("hello".to_string()),
+                        None,
+                        None,
+                        vec![],
+                    )],
+                ),
+                Node::new(Some(Div), None, None, None, vec![]).with_self_closing(true),
             ],
-        };
+        );
         assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
@@ -510,14 +486,8 @@ mod parser_tests {
             "content".to_string(),
             AttributeValues::from("text/html; charset=utf-8"),
         );
-        let expected = Node {
-            tag_name: Some(Meta),
-            value: None,
-            attributes: Some(attributes),
-            self_closing: true,
-            within_special_tag: None,
-            children: Vec::new(),
-        };
+        let expected =
+            Node::new(Some(Meta), None, Some(attributes), None, Vec::new()).with_self_closing(true);
         assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
