@@ -50,7 +50,7 @@ fn self_closing_textarea_needs_no_raw_text_terminator() {
     let parsed = safe_parse_html("<textarea />".to_string()).unwrap();
 
     assert_eq!(parsed.tag_name, Some(Unknown("textarea".to_string())));
-    assert!(parsed.self_closing);
+    assert!(parsed.explicitly_self_closing);
     assert!(parsed.children.is_empty());
     assert_eq!(
         safe_from_html_to_md("<textarea />".to_string()).unwrap(),

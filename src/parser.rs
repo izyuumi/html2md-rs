@@ -176,7 +176,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
                             .to_string(),
                     ),
                     attributes: None,
-                    self_closing: false,
+                    explicitly_self_closing: false,
                     within_special_tag: None,
                     children: Vec::new(),
                 };
@@ -281,19 +281,17 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
                 // parse thae tag name into a NodeType from the node_name string
                 let node_type = NodeType::from_tag_str(node_name);
                 let raw_text = is_raw_text_tag(node_name);
-                let self_closing = explicitly_self_closing || is_html_void_tag(node_name);
-
                 // initialize a new node with the tag name and attribute map
                 let mut new_node = Node {
                     tag_name: Some(node_type),
                     value: None,
                     attributes: attribute_map,
-                    self_closing,
+                    explicitly_self_closing,
                     within_special_tag: None,
                     children: Vec::new(),
                 };
 
-                if self_closing {
+                if new_node.closes_immediately() {
                     // if the tag is self-closing, add the node to the parent
                     // if a parent does not exist, add the node to the nodes vector
                     if let Some(parent) = stack.last_mut() {
@@ -324,7 +322,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
                         tag_name: Some(Text),
                         value: Some(raw_rest[..body_end].to_string()),
                         attributes: None,
-                        self_closing: false,
+                        explicitly_self_closing: false,
                         within_special_tag: None,
                         children: Vec::new(),
                     };
@@ -375,7 +373,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
                     tag_name: Some(Text),
                     value: Some(" ".to_string()),
                     attributes: None,
-                    self_closing: false,
+                    explicitly_self_closing: false,
                     within_special_tag: None,
                     children: Vec::new(),
                 };
@@ -396,7 +394,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
             tag_name: Some(Text),
             value: Some(text.to_string()),
             attributes: None,
-            self_closing: false,
+            explicitly_self_closing: false,
             within_special_tag: None,
             children: Vec::new(),
         };
@@ -426,7 +424,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
         tag_name: None,
         value: None,
         attributes: None,
-        self_closing: false,
+        explicitly_self_closing: false,
         within_special_tag: None,
         children: nodes,
     })
@@ -629,15 +627,6 @@ fn is_raw_text_tag(tag_name: &str) -> bool {
         .any(|raw_tag| tag_name.eq_ignore_ascii_case(raw_tag))
 }
 
-fn is_html_void_tag(tag_name: &str) -> bool {
-    [
-        "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param",
-        "source", "track", "wbr",
-    ]
-    .iter()
-    .any(|void_tag| tag_name.eq_ignore_ascii_case(void_tag))
-}
-
 fn is_phrasing_node(node: &Node) -> bool {
     node.tag_name.as_ref().is_some_and(NodeType::is_phrasing)
 }
@@ -717,7 +706,7 @@ fn issue_31() {
                 ("alt".to_string(), AttributeValues::from("Rust<br/>Logo")),
             ]),
         }),
-        self_closing: true,
+        explicitly_self_closing: true,
         children: Vec::new(),
         within_special_tag: None,
     };
@@ -740,7 +729,7 @@ fn issue_36() {
                 AttributeValues::from("https://hoerspiele.dra.de/fileadmin/www.hoerspiele.dra.de/images/vollinfo/4970918_B01.jpg"),
             )]),
         }),
-        self_closing: true,
+        explicitly_self_closing: true,
         children: Vec::new(),
         within_special_tag: None,
     };

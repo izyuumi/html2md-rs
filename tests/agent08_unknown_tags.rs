@@ -92,8 +92,8 @@ fn self_closing_and_explicit_empty_custom_elements_remain_distinct() {
     let self_closing = safe_parse_html("<x-icon />".to_string()).unwrap();
     let explicit_empty = safe_parse_html("<x-icon></x-icon>".to_string()).unwrap();
 
-    assert!(self_closing.self_closing);
-    assert!(!explicit_empty.self_closing);
+    assert!(self_closing.explicitly_self_closing);
+    assert!(!explicit_empty.explicitly_self_closing);
     assert_eq!(to_md(self_closing), "<x-icon />");
     assert_eq!(to_md(explicit_empty), "<x-icon></x-icon>");
 }

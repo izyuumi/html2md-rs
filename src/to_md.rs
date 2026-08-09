@@ -127,7 +127,11 @@ fn push_html_attribute(output: &mut String, key: &str, value: &str) {
     output.push('"');
 }
 
-fn unknown_opening_tag(tag: &str, attributes: Option<&Attributes>, self_closing: bool) -> String {
+fn unknown_opening_tag(
+    tag: &str,
+    attributes: Option<&Attributes>,
+    closes_immediately: bool,
+) -> String {
     let mut opening = format!("<{}", tag);
 
     if let Some(attributes) = attributes {
@@ -153,7 +157,7 @@ fn unknown_opening_tag(tag: &str, attributes: Option<&Attributes>, self_closing:
         }
     }
 
-    if self_closing {
+    if closes_immediately {
         opening.push_str(" />");
     } else {
         opening.push('>');
@@ -270,10 +274,10 @@ pub fn to_md_with_config(node: Node, config: &ToMdConfig) -> String {
             Work::Append(value) => output.push_str(&value),
             Work::AppendStatic(value) => output.push_str(value),
             Work::Render(mut node, text_mode) => {
+                let closes_immediately = node.closes_immediately();
                 let tag_name = node.tag_name.take();
                 let value = node.value.take();
                 let attributes = node.attributes.take();
-                let self_closing = node.self_closing;
                 let within_special_tag = node.within_special_tag.take();
                 let mut children = std::mem::take(&mut node.children);
 
@@ -459,9 +463,9 @@ pub fn to_md_with_config(node: Node, config: &ToMdConfig) -> String {
                         output.push_str(&unknown_opening_tag(
                             &tag,
                             attributes.as_ref(),
-                            self_closing,
+                            closes_immediately,
                         ));
-                        if !self_closing {
+                        if !closes_immediately {
                             stack.push(Work::Append(format!("</{}>", tag)));
                             push_children(&mut stack, children, TextMode::Raw);
                         }

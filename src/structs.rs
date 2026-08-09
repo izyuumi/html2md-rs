@@ -123,6 +123,16 @@ impl NodeType {
                 | Self::Unknown(_)
         )
     }
+
+    pub(crate) fn is_html_void(&self) -> bool {
+        matches!(self, Self::Link | Self::Meta | Self::Hr | Self::Br)
+            || matches!(self, Self::Unknown(tag) if [
+                "area", "base", "col", "embed", "img", "input", "param", "source", "track",
+                "wbr",
+            ]
+            .iter()
+            .any(|void_tag| tag.eq_ignore_ascii_case(void_tag)))
+    }
 }
 
 /// Represents a node in the HTML tree.
@@ -135,8 +145,8 @@ pub struct Node {
     pub value: Option<String>,
     /// Element attributes, when present.
     pub attributes: Option<Attributes>,
-    /// Whether the element is explicitly self-closing or has HTML void-element semantics.
-    pub self_closing: bool,
+    /// Whether the source opening tag used explicit self-closing syntax (`/>`).
+    pub explicitly_self_closing: bool,
     /// Ancestor tags that affect descendant formatting.
     pub within_special_tag: Option<Vec<NodeType>>,
     /// Child nodes in source order.
@@ -182,7 +192,11 @@ impl fmt::Debug for Node {
                     indent(formatter, depth + 1)?;
                     writeln!(formatter, "attributes: {:?},", frame.node.attributes)?;
                     indent(formatter, depth + 1)?;
-                    writeln!(formatter, "self_closing: {:?},", frame.node.self_closing)?;
+                    writeln!(
+                        formatter,
+                        "explicitly_self_closing: {:?},",
+                        frame.node.explicitly_self_closing
+                    )?;
                     indent(formatter, depth + 1)?;
                     writeln!(
                         formatter,
@@ -197,11 +211,11 @@ impl fmt::Debug for Node {
                 } else {
                     write!(
                         formatter,
-                        "Node {{ tag_name: {:?}, value: {:?}, attributes: {:?}, self_closing: {:?}, within_special_tag: {:?}, children: [",
+                        "Node {{ tag_name: {:?}, value: {:?}, attributes: {:?}, explicitly_self_closing: {:?}, within_special_tag: {:?}, children: [",
                         frame.node.tag_name,
                         frame.node.value,
                         frame.node.attributes,
-                        frame.node.self_closing,
+                        frame.node.explicitly_self_closing,
                         frame.node.within_special_tag
                     )?;
                 }
@@ -250,7 +264,7 @@ impl PartialEq for Node {
             left.tag_name == right.tag_name
                 && left.value == right.value
                 && left.attributes == right.attributes
-                && left.self_closing == right.self_closing
+                && left.explicitly_self_closing == right.explicitly_self_closing
                 && left.within_special_tag == right.within_special_tag
                 && left.children.len() == right.children.len()
         }
@@ -291,7 +305,7 @@ impl Clone for Node {
                 tag_name: source.tag_name.clone(),
                 value: source.value.clone(),
                 attributes: source.attributes.clone(),
-                self_closing: source.self_closing,
+                explicitly_self_closing: source.explicitly_self_closing,
                 within_special_tag: source.within_special_tag.clone(),
                 children: Vec::with_capacity(source.children.len()),
             }
@@ -401,17 +415,21 @@ impl Node {
             tag_name,
             value,
             attributes,
-            self_closing: false,
+            explicitly_self_closing: false,
             within_special_tag,
             children,
         }
     }
 
-    /// Sets whether this node uses self-closing or HTML void-element semantics.
+    /// Marks this node as using explicit self-closing syntax (`/>`).
     #[must_use]
-    pub fn with_self_closing(mut self, self_closing: bool) -> Self {
-        self.self_closing = self_closing;
+    pub fn with_explicit_self_closing(mut self) -> Self {
+        self.explicitly_self_closing = true;
         self
+    }
+
+    pub(crate) fn closes_immediately(&self) -> bool {
+        self.explicitly_self_closing || self.tag_name.as_ref().is_some_and(NodeType::is_html_void)
     }
 }
 

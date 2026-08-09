@@ -3,6 +3,7 @@ mod parser_tests {
     use html2md_rs::{
         parser::{safe_parse_html, MalformedTagError, ParseHTMLError},
         structs::{AttributeValues, Attributes, Node, NodeType::*},
+        to_md::to_md,
     };
 
     #[test]
@@ -147,12 +148,23 @@ mod parser_tests {
     #[test]
     fn self_closing_div() {
         let input = "<div />".to_string();
-        let expected = Node::new(Some(Div), None, None, None, vec![]).with_self_closing(true);
+        let expected = Node::new(Some(Div), None, None, None, vec![]).with_explicit_self_closing();
         assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
     #[test]
-    fn with_self_closing_div() {
+    fn tracks_explicit_slash_separately_from_void_semantics() {
+        let implicit_void = safe_parse_html("<img>".to_string()).unwrap();
+        let explicit_void = safe_parse_html("<img />".to_string()).unwrap();
+
+        assert!(!implicit_void.explicitly_self_closing);
+        assert!(explicit_void.explicitly_self_closing);
+        assert_eq!(to_md(implicit_void), "<img />");
+        assert_eq!(to_md(explicit_void), "<img />");
+    }
+
+    #[test]
+    fn tracks_explicitly_self_closing_div_among_siblings() {
         let input = "<div>hello</div>
 <div />"
             .to_string();
@@ -175,7 +187,7 @@ mod parser_tests {
                         vec![],
                     )],
                 ),
-                Node::new(Some(Div), None, None, None, vec![]).with_self_closing(true),
+                Node::new(Some(Div), None, None, None, vec![]).with_explicit_self_closing(),
             ],
         );
         assert_eq!(safe_parse_html(input).unwrap(), expected);
@@ -486,8 +498,7 @@ mod parser_tests {
             "content".to_string(),
             AttributeValues::from("text/html; charset=utf-8"),
         );
-        let expected =
-            Node::new(Some(Meta), None, Some(attributes), None, Vec::new()).with_self_closing(true);
+        let expected = Node::new(Some(Meta), None, Some(attributes), None, Vec::new());
         assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 

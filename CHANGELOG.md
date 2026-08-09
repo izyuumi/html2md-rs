@@ -5,11 +5,12 @@
 ### Breaking Changes
 
 * mark `Node` as non-exhaustive; use `Node::new` instead of external struct literals
+* rename `Node::self_closing` to `Node::explicitly_self_closing`; HTML void behavior is now derived from the tag
 * remove deprecated panicking `parse_html` and `from_html_to_md`; use the safe `Result` APIs
 
 ### Added
 
-* add `Node::with_self_closing` for constructing explicitly self-closing nodes
+* add `Node::with_explicit_self_closing` for constructing explicitly self-closing nodes
 
 ## [0.11.0](https://github.com/izyuumi/html2md-rs/compare/v0.10.2...v0.11.0) (2026-08-09)
 

@@ -61,11 +61,11 @@ fn converts_and_drops_deep_elements_without_overflowing() {
     let empty = safe_parse_html(String::new()).unwrap();
     assert_eq!(
         format!("{empty:?}"),
-        "Node { tag_name: None, value: None, attributes: None, self_closing: false, within_special_tag: None, children: [] }"
+        "Node { tag_name: None, value: None, attributes: None, explicitly_self_closing: false, within_special_tag: None, children: [] }"
     );
     assert_eq!(
         format!("{empty:#?}"),
-        "Node {\n    tag_name: None,\n    value: None,\n    attributes: None,\n    self_closing: false,\n    within_special_tag: None,\n    children: [],\n}"
+        "Node {\n    tag_name: None,\n    value: None,\n    attributes: None,\n    explicitly_self_closing: false,\n    within_special_tag: None,\n    children: [],\n}"
     );
 
     let ordinary = safe_parse_html(
