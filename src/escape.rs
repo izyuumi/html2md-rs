@@ -49,19 +49,6 @@ pub(crate) fn decode_html_entities(input: &str) -> Cow<'_, str> {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::decode_html_entities;
-
-    #[test]
-    fn entity_scan_handles_many_false_starts() {
-        let input = format!("{}amp;", "&".repeat(100_000));
-        let expected = "&".repeat(100_000);
-
-        assert_eq!(decode_html_entities(&input), expected);
-    }
-}
-
 pub(crate) fn escape_markdown(input: &str) -> Cow<'_, str> {
     let mut output: Option<String> = None;
     let mut copied_until = 0;
@@ -128,5 +115,18 @@ pub(crate) fn escape_html_attribute(input: &str) -> Cow<'_, str> {
             Cow::Owned(output)
         }
         None => Cow::Borrowed(input),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::decode_html_entities;
+
+    #[test]
+    fn entity_scan_handles_many_false_starts() {
+        let input = format!("{}amp;", "&".repeat(100_000));
+        let expected = "&".repeat(100_000);
+
+        assert_eq!(decode_html_entities(&input), expected);
     }
 }
