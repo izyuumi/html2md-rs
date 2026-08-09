@@ -1,4 +1,8 @@
-//! This module contains functions that converts a Node to a markdown string.
+//! Functions for rendering parsed HTML nodes as Markdown.
+//!
+//! Use [`safe_from_html_to_md`] for HTML source, [`safe_from_html_to_md_with_config`] to omit
+//! selected subtrees, or [`to_md`] when a parsed [`Node`] already exists.
+//! Unknown elements pass through as raw HTML. `script`, `style`, and `title` content is omitted.
 
 use crate::{
     escape::{decode_html_entities, escape_html_attribute, escape_markdown},
@@ -165,7 +169,7 @@ fn unknown_opening_tag(
     opening
 }
 
-/// Converts a Node to a markdown string.
+/// Consumes a [`Node`] tree and renders it as Markdown with default configuration.
 ///
 /// # Arguments
 ///
@@ -203,14 +207,14 @@ pub fn to_md(node: Node) -> String {
     to_md_with_config(node, &ToMdConfig::default())
 }
 
-/// Converts a Node to a markdown string with custom config.
+/// Consumes a [`Node`] tree and renders it as Markdown using [`ToMdConfig`].
 ///
 /// # Arguments
 ///
 /// * `node` - A `Node` to be converted to markdown.
-/// * `config` - A custom configuration, `ToMdConfig`, to use to configure how to render the output markdown.
+/// * `config` - Rendering configuration. Ignored node types have their complete subtrees omitted.
 ///
-/// # Example's
+/// # Examples
 /// ```
 /// use html2md_rs::{
 ///     structs::{
@@ -490,13 +494,15 @@ fn issue34() {
     assert_eq!(safe_from_html_to_md(input.to_string()).unwrap(), expected);
 }
 
-/// Safely converts a string of HTML to a markdown string.
-///
-/// Returns an error if the HTML is invalid.
+/// Parses an owned HTML string and renders it as Markdown with default configuration.
 ///
 /// # Arguments
 ///
 /// * `input` - A string of HTML to be converted to markdown.
+///
+/// # Errors
+///
+/// Propagates errors from [`crate::parser::safe_parse_html`].
 ///
 /// # Examples
 ///
@@ -512,14 +518,16 @@ pub fn safe_from_html_to_md(input: String) -> Result<String, ParseHTMLError> {
     crate::parser::safe_parse_html(input).map(to_md)
 }
 
-/// Safely converts a string of HTML to a markdown string with custom config.
-///
-/// Returns an error if the HTML is invalid.
+/// Parses an owned HTML string and renders it as Markdown using [`ToMdConfig`].
 ///
 /// # Arguments
 ///
 /// * `input` - A string of HTML to be converted to markdown.
-/// * `config` - Custom configuration `ToMdConfig`
+/// * `config` - Rendering configuration. Ignored node types have their complete subtrees omitted.
+///
+/// # Errors
+///
+/// Propagates errors from [`crate::parser::safe_parse_html`].
 ///
 /// # Examples
 ///

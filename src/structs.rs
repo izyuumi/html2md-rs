@@ -64,7 +64,7 @@ pub enum NodeType {
     Text,
     /// HTML comment.
     Comment,
-    /// Unsupported tag, retaining its normalized tag name.
+    /// Unsupported tag, retaining the name lowercased by the parser.
     Unknown(String),
 }
 
@@ -135,7 +135,11 @@ impl NodeType {
     }
 }
 
-/// Represents a node in the HTML tree.
+/// A node in the parsed HTML tree.
+///
+/// This struct is non-exhaustive. Construct nodes with [`Node::new`], then call
+/// [`Node::with_explicit_self_closing`] when the source opening tag used `/>`.
+/// A `tag_name` of `None` represents a synthetic container for zero or multiple top-level nodes.
 #[derive(Default)]
 #[non_exhaustive]
 pub struct Node {
@@ -147,7 +151,9 @@ pub struct Node {
     pub attributes: Option<Attributes>,
     /// Whether the source opening tag used explicit self-closing syntax (`/>`).
     pub explicitly_self_closing: bool,
-    /// Ancestor tags that affect descendant formatting.
+    /// Parser-populated ancestor tags that affect list and blockquote formatting.
+    ///
+    /// Manually constructed trees normally use `None`.
     pub within_special_tag: Option<Vec<NodeType>>,
     /// Child nodes in source order.
     pub children: Vec<Node>,
@@ -375,7 +381,7 @@ impl Drop for Node {
 }
 
 impl Node {
-    /// Checks whether the node is within any of the special tags passed in
+    /// Returns whether this node is inside any supplied formatting-sensitive tag.
     pub fn is_in_special_tag(&self, tags: &[NodeType]) -> bool {
         if let Some(within_special_tag) = &self.within_special_tag {
             within_special_tag.iter().any(|tag| tags.contains(tag))
@@ -384,8 +390,7 @@ impl Node {
         }
     }
 
-    /// Returns the leading spaces if there is any
-    /// This is used to format the output of the unordered and ordered lists
+    /// Returns indentation used when rendering nested list items.
     pub fn leading_spaces(&self) -> String {
         let ul_or_ol = &[NodeType::Ul, NodeType::Ol];
         if let Some(within_special_tag) = &self.within_special_tag {
@@ -403,7 +408,10 @@ impl Node {
         }
     }
 
-    /// Creates a new Node from tag_name, value, attributes, within_special_tag and children
+    /// Creates a node that was not explicitly self-closing.
+    ///
+    /// Use `tag_name: None` for a synthetic container. `value` is used by text and comment nodes;
+    /// manually constructed trees normally pass `None` for `within_special_tag`.
     pub fn new(
         tag_name: Option<NodeType>,
         value: Option<String>,
@@ -422,6 +430,9 @@ impl Node {
     }
 
     /// Marks this node as using explicit self-closing syntax (`/>`).
+    ///
+    /// HTML void semantics are derived independently from [`NodeType`], so `<img>` closes
+    /// immediately even when this flag is `false`.
     #[must_use]
     pub fn with_explicit_self_closing(mut self) -> Self {
         self.explicitly_self_closing = true;
@@ -433,7 +444,9 @@ impl Node {
     }
 }
 
-/// Represents the Attributes of an HTML element.
+/// Attributes attached to an HTML element.
+///
+/// `id` and `class` have dedicated borrowed accessors; other keys share the same lookup interface.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Attributes {
     pub(crate) id: Option<String>,
@@ -442,7 +455,7 @@ pub struct Attributes {
 }
 
 impl Attributes {
-    /// Creates a new Attributes struct from id, class and attributes
+    /// Creates an empty attribute collection.
     pub fn new() -> Self {
         Attributes {
             id: None,
@@ -451,7 +464,7 @@ impl Attributes {
         }
     }
 
-    /// Returns the attribute value of the key passed in
+    /// Returns a cloned value for `key`, including `id` and `class`.
     pub fn get(&self, key: &str) -> Option<AttributeValues> {
         match key {
             "id" => self.id.as_ref().map(|id| AttributeValues::from(id.clone())),
@@ -463,17 +476,17 @@ impl Attributes {
         }
     }
 
-    /// Returns the id attribute of the element
+    /// Borrows the element's `id` attribute.
     pub fn get_id(&self) -> Option<&String> {
         self.id.as_ref()
     }
 
-    /// Returns the class attribute of the element
+    /// Borrows the element's `class` attribute.
     pub fn get_class(&self) -> Option<&String> {
         self.class.as_ref()
     }
 
-    /// Return the href attribute of the element
+    /// Returns an owned `href` when its value is a string.
     pub fn get_href(&self) -> Option<String> {
         self.get("href").and_then(|value| match value {
             AttributeValues::String(href) => Some(href),
@@ -481,7 +494,7 @@ impl Attributes {
         })
     }
 
-    /// Returns the attributes of the element
+    /// Returns whether `key` is present, including `id` and `class`.
     pub fn contains(&self, key: &str) -> bool {
         match key {
             "id" => self.id.is_some(),
@@ -490,7 +503,7 @@ impl Attributes {
         }
     }
 
-    /// Inserts a new attribute into the element with the key and value passed in
+    /// Inserts or replaces an attribute.
     pub fn insert(&mut self, key: String, value: AttributeValues) {
         match key.as_str() {
             "id" => self.id = Some(value.to_string()),
@@ -501,12 +514,12 @@ impl Attributes {
         }
     }
 
-    /// Returns whether the element attributes are empty
+    /// Returns whether the collection contains no attributes.
     pub fn is_empty(&self) -> bool {
         self.id.is_none() && self.class.is_none() && self.attributes.is_empty()
     }
 
-    /// Inserts attributes into the element from a tuple vector
+    /// Builds a collection from key-value pairs.
     pub fn from(vec: Vec<(String, AttributeValues)>) -> Self {
         let mut attributes = Attributes::new();
         for (key, value) in vec {
@@ -584,6 +597,9 @@ impl std::fmt::Display for AttributeValues {
 }
 
 /// Controls how nodes are rendered to Markdown.
+///
+/// Pass this to [`crate::to_md::to_md_with_config`] or
+/// [`crate::to_md::safe_from_html_to_md_with_config`].
 #[derive(Debug, Default)]
 pub struct ToMdConfig {
     /// Node types whose complete subtrees should be omitted from Markdown output.

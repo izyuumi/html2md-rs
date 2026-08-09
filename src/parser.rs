@@ -4,6 +4,9 @@
 //! returned as top-level nodes. Whitespace-only ordinary text nodes are omitted; raw-text element
 //! bodies are preserved.
 //! Supported element names map to their `NodeType` variants; all others become `NodeType::Unknown`.
+//! Closing-tag names are not matched: any closing tag closes the most recently opened node. A
+//! single top-level node is returned directly; zero or multiple top-level nodes are wrapped in a
+//! synthetic [`Node`] whose `tag_name` is `None`.
 //!
 //! [`safe_parse_html`] returns a structured error for malformed input.
 
@@ -13,7 +16,9 @@ use crate::structs::{
 };
 use std::fmt::Display;
 
-/// Errors that will be returned when parsing malformed HTML tags
+/// Errors reported for malformed HTML tags.
+///
+/// Each offset is an approximate UTF-8 byte offset from the start of the input.
 #[derive(Debug, PartialEq, Eq)]
 pub enum MalformedTagError {
     /// The closing bracket of the tag is missing
@@ -22,7 +27,9 @@ pub enum MalformedTagError {
     MissingTagName(u32),
 }
 
-/// Errors that will be returned when parsing malformed HTML attributes
+/// Errors reported for malformed HTML attributes.
+///
+/// Each offset is an approximate UTF-8 byte offset from the start of the input.
 #[derive(Debug, PartialEq, Eq)]
 pub enum MalformedAttributeError {
     /// The quotation mark of the attribute is missing
@@ -33,7 +40,9 @@ pub enum MalformedAttributeError {
     MissingAttributeValue(u32),
 }
 
-/// Errors that can occur when parsing HTML
+/// Errors that can occur while parsing HTML.
+///
+/// Each variant contains the malformed source fragment followed by its specific error.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ParseHTMLError {
     /// The tag is malformed
@@ -88,11 +97,16 @@ impl Display for ParseHTMLError {
     }
 }
 
-/// Safely parses a string of HTML into a Node struct
+/// Consumes an owned HTML string and returns a [`Node`] tree.
 ///
 /// # Arguments
 ///
-/// * `input` - A string slice that holds the HTML to be parsed
+/// * `input` - HTML source to parse.
+///
+/// # Errors
+///
+/// Returns [`ParseHTMLError`] for malformed tags or attributes recognized by this parser. See the
+/// [module documentation](self) for accepted subset and root-shape rules.
 ///
 /// # Examples
 ///
