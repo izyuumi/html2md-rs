@@ -83,7 +83,32 @@ jobs:
           crate_version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')"
           test "v${crate_version}" = "${GITHUB_REF_NAME}"
       - name: Release Crate
-        run: cargo publish --token "${{ secrets.CARGO_PUBLISH_TOKEN }}"
+        run: |
+          metadata="$(cargo metadata --no-deps --format-version 1)"
+          crate_name="$(jq -r '.packages[0].name' <<<"${metadata}")"
+          crate_version="$(jq -r '.packages[0].version' <<<"${metadata}")"
+          registry_status="$(
+            curl \
+              --silent \
+              --show-error \
+              --output /dev/null \
+              --write-out '%{http_code}' \
+              --retry 3 \
+              --user-agent "${GITHUB_REPOSITORY} release workflow" \
+              "https://crates.io/api/v1/crates/${crate_name}/${crate_version}"
+          )"
+          case "${registry_status}" in
+            200)
+              echo "${crate_name} ${crate_version} is already published"
+              ;;
+            404)
+              cargo publish --token "${{ secrets.CARGO_PUBLISH_TOKEN }}"
+              ;;
+            *)
+              echo "crates.io returned HTTP ${registry_status}" >&2
+              exit 1
+              ;;
+          esac
 
   github-release:
     if: startsWith(github.ref, 'refs/tags/v')
