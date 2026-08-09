@@ -1,2 +1,1 @@
-unstable_features = true
-format_code_in_doc_comments = true
+edition = "2021"

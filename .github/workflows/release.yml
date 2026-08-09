@@ -1,37 +1,66 @@
-name: Release
+name: CI and release
 
 on:
+  pull_request:
   push:
     branches:
       - main
 
-env:
-  RUSTFLAGS: "-Dwarnings"
-
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
-  clippy-check:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Check formatting
+        run: cargo fmt --check
       - name: Run Clippy
-        run: cargo clippy --all-targets --all-features
-  release_please:
+        run: cargo clippy --all-targets --all-features -- -D warnings
+      - name: Run tests
+        run: cargo test --all-features
+      - name: Build documentation
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --no-deps
+      - name: Check package
+        run: cargo publish --dry-run
+
+  msrv:
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust 1.70
+        uses: dtolnay/rust-toolchain@1.70.0
+      - name: Check minimum supported Rust version
+        run: cargo check --all-features
+
+  release_please:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [validate, msrv]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
     steps:
       - uses: google-github-actions/release-please-action@v4
         id: release
         with:
           release-type: rust
 
+  publish:
+    if: needs.release_please.outputs.release_created == 'true'
+    needs: release_please
+    runs-on: ubuntu-latest
+    steps:
       - name: Checkout
-        if: ${{ steps.release.outputs.release_created }}
         uses: actions/checkout@v4
-
       - name: Release Crate
-        if: ${{ steps.release.outputs.release_created }}
-        run: |
-          cargo publish --token ${{ secrets.CARGO_PUBLISH_TOKEN }}
+        run: cargo publish --token ${{ secrets.CARGO_PUBLISH_TOKEN }}
