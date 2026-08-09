@@ -1,5 +1,32 @@
 # Changelog
 
+## [Unreleased]
+
+### Breaking Changes
+
+* add `Node::self_closing`; exhaustive `Node` struct literals must initialize the new field
+* make `Node` destruction iterative; borrow or `take` public fields instead of moving them, and use `Node::new` instead of struct-update syntax
+
+### Changed
+
+* decode common named and numeric HTML character references
+* escape Markdown punctuation in ordinary text while preserving literal code and unknown-element content
+* apply rendering configuration consistently inside lists
+* render inline `code` as code spans and `pre` as adaptive fenced code blocks
+* preserve explicit self-closing custom elements and recognize standard HTML void elements
+* parse `script`, `style`, `textarea`, and `title` contents as raw text while suppressing `script` and `style` output
+* accept single-quoted and empty quoted attribute values
+* add 100 focused parser and renderer regression tests
+
+### Fixed
+
+* return parser errors instead of panicking on malformed input
+* handle non-ASCII parser input without panicking
+* convert deeply nested documents without renderer stack overflow
+* preserve inline whitespace and comment source order
+* emit valid CommonMark ordered-list markers without overflow
+* avoid list markers for ignored list items
+
 ## [0.10.2](https://github.com/izyuumi/html2md-rs/compare/v0.10.1...v0.10.2) (2024-12-10)
 
 
