@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+## [0.12.2](https://github.com/izyuumi/html2md-rs/compare/v0.12.1...v0.12.2) (2026-08-10)
+
+### Fixed
+
+* preserve percent-encoded URL data and HTML entity semantics in CommonMark link destinations
+
+### Performance
+
+* decode HTML entity candidates in linear time
+
+### Changed
+
+* remove the final runtime dependency
+* pin CI actions and make signed-tag publication retry-safe with checksum verification
+* create GitHub Releases automatically after successful crate publication
+
 ## [0.12.1](https://github.com/izyuumi/html2md-rs/compare/v0.12.0...v0.12.1) (2026-08-10)
 
 ### Documentation
