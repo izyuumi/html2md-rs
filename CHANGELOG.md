@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.12.1](https://github.com/izyuumi/html2md-rs/compare/v0.12.0...v0.12.1) (2026-08-10)
+
 ### Documentation
 
 * clarify parser contracts, node construction, attribute ownership, and rendering entry points
