@@ -27,6 +27,7 @@
 * handle non-ASCII parser input without panicking
 * convert deeply nested documents without renderer stack overflow
 * clone deeply nested `Node` trees without stack overflow
+* compare and format deeply nested `Node` trees without stack overflow
 * preserve inline whitespace and comment source order
 * emit valid CommonMark ordered-list markers without overflow
 * avoid list markers for ignored list items

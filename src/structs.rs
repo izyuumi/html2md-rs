@@ -1,6 +1,6 @@
 //! HTML tree and Markdown rendering configuration types.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt, fmt::Write as _};
 
 /// Represents the different types of HTML elements that the library supports.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
@@ -126,7 +126,7 @@ impl NodeType {
 }
 
 /// Represents a node in the HTML tree.
-#[derive(Debug, PartialEq, Eq, Default)]
+#[derive(Default)]
 pub struct Node {
     /// Element type, or `None` for a synthetic container.
     pub tag_name: Option<NodeType>,
@@ -141,6 +141,147 @@ pub struct Node {
     /// Child nodes in source order.
     pub children: Vec<Node>,
 }
+
+impl fmt::Debug for Node {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fn indent(formatter: &mut fmt::Formatter<'_>, depth: usize) -> fmt::Result {
+            for _ in 0..depth {
+                formatter.write_str("    ")?;
+            }
+            Ok(())
+        }
+
+        struct Frame<'a> {
+            node: &'a Node,
+            next_child: usize,
+            opened: bool,
+        }
+
+        let pretty = formatter.alternate();
+        let mut frames = Vec::with_capacity(32);
+        frames.push(Frame {
+            node: self,
+            next_child: 0,
+            opened: false,
+        });
+
+        while !frames.is_empty() {
+            let depth = frames.len().saturating_sub(1);
+            let Some(frame) = frames.last_mut() else {
+                break;
+            };
+
+            if !frame.opened {
+                if pretty {
+                    formatter.write_str("Node {\n")?;
+                    indent(formatter, depth + 1)?;
+                    writeln!(formatter, "tag_name: {:?},", frame.node.tag_name)?;
+                    indent(formatter, depth + 1)?;
+                    writeln!(formatter, "value: {:?},", frame.node.value)?;
+                    indent(formatter, depth + 1)?;
+                    writeln!(formatter, "attributes: {:?},", frame.node.attributes)?;
+                    indent(formatter, depth + 1)?;
+                    writeln!(formatter, "self_closing: {:?},", frame.node.self_closing)?;
+                    indent(formatter, depth + 1)?;
+                    writeln!(
+                        formatter,
+                        "within_special_tag: {:?},",
+                        frame.node.within_special_tag
+                    )?;
+                    indent(formatter, depth + 1)?;
+                    formatter.write_str("children: [")?;
+                    if !frame.node.children.is_empty() {
+                        formatter.write_char('\n')?;
+                    }
+                } else {
+                    write!(
+                        formatter,
+                        "Node {{ tag_name: {:?}, value: {:?}, attributes: {:?}, self_closing: {:?}, within_special_tag: {:?}, children: [",
+                        frame.node.tag_name,
+                        frame.node.value,
+                        frame.node.attributes,
+                        frame.node.self_closing,
+                        frame.node.within_special_tag
+                    )?;
+                }
+                frame.opened = true;
+            }
+
+            let next_child = frame.node.children.get(frame.next_child);
+            if let Some(child) = next_child {
+                if pretty {
+                    indent(formatter, depth + 2)?;
+                } else if frame.next_child > 0 {
+                    formatter.write_str(", ")?;
+                }
+                frame.next_child += 1;
+                frames.push(Frame {
+                    node: child,
+                    next_child: 0,
+                    opened: false,
+                });
+                continue;
+            }
+
+            if pretty {
+                if !frame.node.children.is_empty() {
+                    indent(formatter, depth + 1)?;
+                }
+                formatter.write_str("],\n")?;
+                indent(formatter, depth)?;
+                formatter.write_char('}')?;
+            } else {
+                formatter.write_str("] }")?;
+            }
+            frames.pop();
+            if pretty && !frames.is_empty() {
+                formatter.write_str(",\n")?;
+            }
+        }
+
+        Ok(())
+    }
+}
+
+impl PartialEq for Node {
+    fn eq(&self, other: &Self) -> bool {
+        fn same_node(left: &Node, right: &Node) -> bool {
+            left.tag_name == right.tag_name
+                && left.value == right.value
+                && left.attributes == right.attributes
+                && left.self_closing == right.self_closing
+                && left.within_special_tag == right.within_special_tag
+                && left.children.len() == right.children.len()
+        }
+
+        if !same_node(self, other) {
+            return false;
+        }
+
+        let mut frames = Vec::with_capacity(32);
+        frames.push((self, other, 0));
+
+        while let Some((left, right, next_child)) = frames.last_mut() {
+            let Some(left_child) = left.children.get(*next_child) else {
+                frames.pop();
+                continue;
+            };
+            let Some(right_child) = right.children.get(*next_child) else {
+                return false;
+            };
+            *next_child += 1;
+
+            if !same_node(left_child, right_child) {
+                return false;
+            }
+            frames.push((left_child, right_child, 0));
+        }
+
+        true
+    }
+}
+
+impl Eq for Node {}
 
 impl Clone for Node {
     fn clone(&self) -> Self {

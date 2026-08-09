@@ -1,4 +1,5 @@
 use html2md_rs::{parser::safe_parse_html, to_md::safe_from_html_to_md};
+use std::io::Write;
 use std::panic::catch_unwind;
 
 #[test]
@@ -57,6 +58,16 @@ fn safe_apis_do_not_panic_on_generated_utf8_input() {
 
 #[test]
 fn converts_and_drops_deep_elements_without_overflowing() {
+    let empty = safe_parse_html(String::new()).unwrap();
+    assert_eq!(
+        format!("{empty:?}"),
+        "Node { tag_name: None, value: None, attributes: None, self_closing: false, within_special_tag: None, children: [] }"
+    );
+    assert_eq!(
+        format!("{empty:#?}"),
+        "Node {\n    tag_name: None,\n    value: None,\n    attributes: None,\n    self_closing: false,\n    within_special_tag: None,\n    children: [],\n}"
+    );
+
     let ordinary = safe_parse_html(
         "<ol start='2'><li><strong id='x'>one</strong></li><li>two</li></ol>".to_string(),
     )
@@ -80,6 +91,9 @@ fn converts_and_drops_deep_elements_without_overflowing() {
     );
     let node = safe_parse_html(input).unwrap();
     let cloned = node.clone();
+
+    assert!(node == cloned);
+    write!(&mut std::io::sink(), "{node:?}").unwrap();
 
     let mut cursor = &cloned;
     for _ in 0..DROP_DEPTH {
