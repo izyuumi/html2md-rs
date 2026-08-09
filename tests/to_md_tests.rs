@@ -3,7 +3,7 @@ mod to_md_tests {
     use html2md_rs::{
         parser::safe_parse_html,
         structs::{Node, NodeType, ToMdConfig},
-        to_md::{safe_from_html_to_md, safe_from_html_to_md_with_config},
+        to_md::{safe_from_html_to_md, safe_from_html_to_md_with_config, to_md},
     };
 
     pub trait PrintNode {
@@ -125,6 +125,34 @@ println!(\"{}\", z);
     }
 
     #[test]
+    fn ordinary_text_decodes_entities_and_escapes_markdown() {
+        let input = "<p>&amp; &lt; &gt; &quot; &apos; &nbsp; &#35; &#x21; * _ [ ]</p>".to_string();
+        let expected = "\\& \\< \\> \" ' \u{a0} \\# \\! \\* \\_ \\[ \\]\n".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn decoded_entities_cannot_become_html_or_decode_twice_in_markdown() {
+        let input = "<p>&lt;script&gt; &amp;lt;</p>".to_string();
+        let expected = "\\<script\\> \\&lt;\n".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn code_and_unknown_html_text_stay_raw() {
+        let input = "<pre><code>&amp; *code*</code></pre><widget>&amp; *html*</widget>".to_string();
+        let expected = "```\n&amp; *code*\n```\n<widget>&amp; *html*</widget>".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn code_block_without_language_has_one_newline_before_closing_fence() {
+        let input = "<pre><code>abc\n\n</code></pre>".to_string();
+        let expected = "```\nabc\n```\n".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
     fn line_break() {
         let input = "<p>hello<br />world</p>".to_string();
         let expected = "hello  \nworld\n".to_string();
@@ -149,6 +177,38 @@ println!(\"{}\", z);
     fn unknown_tag() {
         let input = "<unknown>hello</unknown>".to_string();
         let expected = "<unknown>hello</unknown>".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn unknown_tag_attribute_values_are_valid_html() {
+        let input = r#"<widget title='a"b & c'>x</widget>"#.to_string();
+        let expected = "<widget title=\"a&quot;b &amp; c\">x</widget>".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn unknown_tag_attribute_entities_are_decoded_once_then_escaped() {
+        let input = "<widget title='a&quot;b &amp; c'>x</widget>".to_string();
+        let expected = "<widget title=\"a&quot;b &amp; c\">x</widget>".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+
+        let input = "<widget title='&amp;quot;'>x</widget>".to_string();
+        let expected = "<widget title=\"&amp;quot;\">x</widget>".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn childless_custom_tag_stays_paired() {
+        let input = "<widget></widget>".to_string();
+        let expected = "<widget></widget>".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn childless_html_void_tag_self_closes_and_preserves_attributes() {
+        let input = "<img src=\"image.png\" />".to_string();
+        let expected = "<img src=\"image.png\" />".to_string();
         assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
     }
 
@@ -179,6 +239,13 @@ println!(\"{}\", z);
     fn ol_start_attribute() {
         let input = "<ol start=\"3\"><li><p>hello</p></li><li><p>world</p></li></ol>".to_string();
         let expected = "3. hello\n4. world\n".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn ordered_list_start_saturates_instead_of_overflowing() {
+        let input = "<ol start=\"999999999\"><li>one</li><li>two</li></ol>".to_string();
+        let expected = "999999999. one\n999999999. two\n".to_string();
         assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
     }
 
@@ -223,5 +290,45 @@ println!(\"{}\", z);
             safe_from_html_to_md_with_config(input, &config).unwrap(),
             expected
         );
+    }
+
+    #[test]
+    fn ignore_rendering_config_applies_inside_lists() {
+        let input = "<ul><li><strong>hidden</strong>shown</li></ul><ol><li><strong>hidden</strong>shown</li></ol>".to_string();
+        let config = ToMdConfig {
+            ignore_rendering: vec![NodeType::Strong],
+        };
+        let expected = "- shown\n1. shown\n".to_string();
+
+        assert_eq!(
+            safe_from_html_to_md_with_config(input, &config).unwrap(),
+            expected
+        );
+    }
+
+    #[test]
+    fn script_and_style_children_do_not_render() {
+        let input =
+            "<p>before</p><script>script text</script><style>style text</style><p>after</p>"
+                .to_string();
+        let expected = "before\nafter\n".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
+    fn deeply_nested_nodes_render_without_recursion() {
+        let mut node = Node::new(
+            Some(NodeType::Text),
+            Some("deep".to_string()),
+            None,
+            None,
+            Vec::new(),
+        );
+
+        for _ in 0..10_000 {
+            node = Node::new(Some(NodeType::Div), None, None, None, vec![node]);
+        }
+
+        assert_eq!(to_md(node), "deep");
     }
 }

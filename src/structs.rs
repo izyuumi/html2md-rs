@@ -1,47 +1,81 @@
+//! HTML tree and Markdown rendering configuration types.
+
 use std::collections::HashMap;
 
 /// Represents the different types of HTML elements that the library supports.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub enum NodeType {
+    /// Document root (`html`).
     Html,
+    /// Document metadata container (`head`).
     Head,
+    /// Embedded CSS (`style`).
     Style,
+    /// External resource link (`link`).
     Link,
+    /// Embedded script (`script`).
     Script,
+    /// Metadata (`meta`).
     Meta,
+    /// Document title (`title`).
     Title,
+    /// Document body (`body`).
     Body,
+    /// Level-one heading (`h1`).
     H1,
+    /// Level-two heading (`h2`).
     H2,
+    /// Level-three heading (`h3`).
     H3,
+    /// Level-four heading (`h4`).
     H4,
+    /// Level-five heading (`h5`).
     H5,
+    /// Level-six heading (`h6`).
     H6,
+    /// Paragraph (`p`).
     P,
+    /// Generic block container (`div`).
     Div,
+    /// Strong importance (`strong`).
     Strong,
+    /// Emphasis (`em`).
     Em,
+    /// Link (`a`).
     A,
+    /// Unordered list (`ul`).
     Ul,
+    /// Ordered list (`ol`).
     Ol,
+    /// List item (`li`).
     Li,
+    /// Preformatted block (`pre`).
     Pre,
+    /// Code (`code`).
     Code,
+    /// Thematic break (`hr`).
     Hr,
+    /// Line break (`br`).
     Br,
+    /// Block quotation (`blockquote`).
     Blockquote,
+    /// Plain text content.
     #[default]
     Text,
+    /// HTML comment.
     Comment,
+    /// Unsupported tag, retaining its normalized tag name.
     Unknown(String),
 }
 
 impl NodeType {
+    /// Returns whether this tag affects descendant list or quote formatting.
     pub fn is_special_tag(&self) -> bool {
         use NodeType::*;
         matches!(self, Blockquote | Ul | Ol)
     }
 
+    /// Converts an HTML tag name into its supported node type.
     pub fn from_tag_str(input: &str) -> Self {
         use NodeType::*;
         match input.to_lowercase().as_str() {
@@ -75,16 +109,46 @@ impl NodeType {
             unknown => Unknown(unknown.to_string()),
         }
     }
+
+    pub(crate) fn is_phrasing(&self) -> bool {
+        matches!(
+            self,
+            Self::Text
+                | Self::Strong
+                | Self::Em
+                | Self::A
+                | Self::Code
+                | Self::Br
+                | Self::Comment
+                | Self::Unknown(_)
+        )
+    }
 }
 
 /// Represents a node in the HTML tree.
 #[derive(Debug, PartialEq, Eq, Clone, Default)]
 pub struct Node {
+    /// Element type, or `None` for a synthetic container.
     pub tag_name: Option<NodeType>,
+    /// Text or comment content stored by this node.
     pub value: Option<String>,
+    /// Element attributes, when present.
     pub attributes: Option<Attributes>,
+    /// Whether the element is explicitly self-closing or has HTML void-element semantics.
+    pub self_closing: bool,
+    /// Ancestor tags that affect descendant formatting.
     pub within_special_tag: Option<Vec<NodeType>>,
+    /// Child nodes in source order.
     pub children: Vec<Node>,
+}
+
+impl Drop for Node {
+    fn drop(&mut self) {
+        let mut nodes = std::mem::take(&mut self.children);
+        while let Some(mut node) = nodes.pop() {
+            nodes.append(&mut node.children);
+        }
+    }
 }
 
 impl Node {
@@ -128,6 +192,7 @@ impl Node {
             tag_name,
             value,
             attributes,
+            self_closing: false,
             within_special_tag,
             children,
         }
@@ -139,7 +204,6 @@ impl Node {
 pub struct Attributes {
     pub(crate) id: Option<String>,
     pub(crate) class: Option<String>,
-    pub(crate) href: Option<String>,
     pub(crate) attributes: HashMap<String, AttributeValues>,
 }
 
@@ -149,7 +213,6 @@ impl Attributes {
         Attributes {
             id: None,
             class: None,
-            href: None,
             attributes: HashMap::new(),
         }
     }
@@ -286,7 +349,9 @@ impl std::fmt::Display for AttributeValues {
     }
 }
 
+/// Controls how nodes are rendered to Markdown.
 #[derive(Debug, Default)]
 pub struct ToMdConfig {
+    /// Node types whose complete subtrees should be omitted from Markdown output.
     pub ignore_rendering: Vec<NodeType>,
 }

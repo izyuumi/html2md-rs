@@ -12,11 +12,13 @@ mod parser_tests {
             tag_name: Some(Div),
             value: None,
             attributes: None,
+            self_closing: false,
             within_special_tag: None,
             children: vec![Node {
                 tag_name: Some(Text),
                 value: Some("hello".to_string()),
                 attributes: None,
+                self_closing: false,
                 within_special_tag: None,
                 children: vec![],
             }],
@@ -31,17 +33,20 @@ mod parser_tests {
             tag_name: None,
             value: None,
             attributes: None,
+            self_closing: false,
             within_special_tag: None,
             children: vec![
                 Node {
                     tag_name: Some(H1),
                     value: None,
                     attributes: None,
+                    self_closing: false,
                     within_special_tag: None,
                     children: vec![Node {
                         tag_name: Some(Text),
                         value: Some("hello".to_string()),
                         attributes: None,
+                        self_closing: false,
                         within_special_tag: None,
                         children: vec![],
                     }],
@@ -50,11 +55,13 @@ mod parser_tests {
                     tag_name: Some(H2),
                     value: None,
                     attributes: None,
+                    self_closing: false,
                     within_special_tag: None,
                     children: vec![Node {
                         tag_name: Some(Text),
                         value: Some("world".to_string()),
                         attributes: None,
+                        self_closing: false,
                         within_special_tag: None,
                         children: vec![],
                     }],
@@ -67,68 +74,80 @@ mod parser_tests {
     #[test]
     fn parse_unordered_list() {
         let input = "<ul><li>hello</li><li>world</li></ul>".to_string();
-        let expected = Node {
-            tag_name: Some(Ul),
-            children: vec![
-                Node {
-                    tag_name: Some(Li),
-                    within_special_tag: Some(vec![Ul]),
-                    children: vec![Node {
-                        tag_name: Some(Text),
-                        within_special_tag: Some(vec![Ul]),
-                        value: Some("hello".to_string()),
-                        ..Default::default()
-                    }],
-                    ..Default::default()
-                },
-                Node {
-                    tag_name: Some(Li),
-                    within_special_tag: Some(vec![Ul]),
-                    children: vec![Node {
-                        tag_name: Some(Text),
-                        within_special_tag: Some(vec![Ul]),
-                        value: Some("world".to_string()),
-                        ..Default::default()
-                    }],
-                    ..Default::default()
-                },
+        let expected = Node::new(
+            Some(Ul),
+            None,
+            None,
+            None,
+            vec![
+                Node::new(
+                    Some(Li),
+                    None,
+                    None,
+                    Some(vec![Ul]),
+                    vec![Node::new(
+                        Some(Text),
+                        Some("hello".to_string()),
+                        None,
+                        Some(vec![Ul]),
+                        Vec::new(),
+                    )],
+                ),
+                Node::new(
+                    Some(Li),
+                    None,
+                    None,
+                    Some(vec![Ul]),
+                    vec![Node::new(
+                        Some(Text),
+                        Some("world".to_string()),
+                        None,
+                        Some(vec![Ul]),
+                        Vec::new(),
+                    )],
+                ),
             ],
-            ..Default::default()
-        };
+        );
         assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
     #[test]
     fn parse_ordered_list() {
         let input = "<ol><li>hello</li><li>world</li></ol>".to_string();
-        let expected = Node {
-            tag_name: Some(Ol),
-            children: vec![
-                Node {
-                    tag_name: Some(Li),
-                    within_special_tag: Some(vec![Ol]),
-                    children: vec![Node {
-                        tag_name: Some(Text),
-                        value: Some("hello".to_string()),
-                        within_special_tag: Some(vec![Ol]),
-                        ..Default::default()
-                    }],
-                    ..Default::default()
-                },
-                Node {
-                    tag_name: Some(Li),
-                    within_special_tag: Some(vec![Ol]),
-                    children: vec![Node {
-                        tag_name: Some(Text),
-                        value: Some("world".to_string()),
-                        within_special_tag: Some(vec![Ol]),
-                        ..Default::default()
-                    }],
-                    ..Default::default()
-                },
+        let expected = Node::new(
+            Some(Ol),
+            None,
+            None,
+            None,
+            vec![
+                Node::new(
+                    Some(Li),
+                    None,
+                    None,
+                    Some(vec![Ol]),
+                    vec![Node::new(
+                        Some(Text),
+                        Some("hello".to_string()),
+                        None,
+                        Some(vec![Ol]),
+                        Vec::new(),
+                    )],
+                ),
+                Node::new(
+                    Some(Li),
+                    None,
+                    None,
+                    Some(vec![Ol]),
+                    vec![Node::new(
+                        Some(Text),
+                        Some("world".to_string()),
+                        None,
+                        Some(vec![Ol]),
+                        Vec::new(),
+                    )],
+                ),
             ],
-            ..Default::default()
-        };
+        );
         assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
@@ -139,6 +158,7 @@ mod parser_tests {
             tag_name: Some(Div),
             value: None,
             attributes: None,
+            self_closing: true,
             within_special_tag: None,
             children: vec![],
         };
@@ -154,17 +174,20 @@ mod parser_tests {
             tag_name: None,
             value: None,
             attributes: None,
+            self_closing: false,
             within_special_tag: None,
             children: vec![
                 Node {
                     tag_name: Some(Div),
                     value: None,
                     attributes: None,
+                    self_closing: false,
                     within_special_tag: None,
                     children: vec![Node {
                         tag_name: Some(Text),
                         value: Some("hello".to_string()),
                         attributes: None,
+                        self_closing: false,
                         within_special_tag: None,
                         children: vec![],
                     }],
@@ -173,6 +196,7 @@ mod parser_tests {
                     tag_name: Some(Div),
                     value: None,
                     attributes: None,
+                    self_closing: true,
                     within_special_tag: None,
                     children: vec![],
                 },
@@ -202,6 +226,163 @@ mod parser_tests {
                 "".to_string(),
                 MalformedTagError::MissingTagName(0)
             ))
+        );
+    }
+
+    #[test]
+    fn unterminated_doctype_returns_error() {
+        let input = "<!DOCTYPE html".to_string();
+        assert_eq!(
+            safe_parse_html(input.clone()),
+            Err(ParseHTMLError::MalformedTag(
+                input,
+                MalformedTagError::MissingClosingBracket(0)
+            ))
+        );
+    }
+
+    #[test]
+    fn doctype_is_case_insensitive() {
+        assert_eq!(
+            safe_parse_html("<!dOcTyPe html><p>x</p>".to_string()).unwrap(),
+            Node::new(
+                Some(P),
+                None,
+                None,
+                None,
+                vec![Node::new(
+                    Some(Text),
+                    Some("x".to_string()),
+                    None,
+                    None,
+                    Vec::new(),
+                )],
+            )
+        );
+    }
+
+    #[test]
+    fn cdata_is_skipped() {
+        assert_eq!(
+            safe_parse_html("<![CDATA[<p>ignored</p>]]><p>x</p>".to_string()).unwrap(),
+            Node::new(
+                Some(P),
+                None,
+                None,
+                None,
+                vec![Node::new(
+                    Some(Text),
+                    Some("x".to_string()),
+                    None,
+                    None,
+                    Vec::new(),
+                )],
+            )
+        );
+
+        let input = "<![CDATA[unterminated".to_string();
+        assert_eq!(
+            safe_parse_html(input.clone()),
+            Err(ParseHTMLError::MalformedTag(
+                input,
+                MalformedTagError::MissingClosingBracket(0)
+            ))
+        );
+    }
+
+    #[test]
+    fn non_ascii_attribute_before_self_closing_tag_keeps_siblings() {
+        let parsed = safe_parse_html("<img alt=\"é\"/><p>x</p>".to_string()).unwrap();
+
+        assert_eq!(parsed.tag_name, None);
+        assert_eq!(parsed.children.len(), 2);
+        assert_eq!(
+            parsed.children[0].tag_name,
+            Some(Unknown("img".to_string()))
+        );
+        assert_eq!(parsed.children[1].tag_name, Some(P));
+    }
+
+    #[test]
+    fn raw_text_elements_preserve_body_and_resume_parsing() {
+        let input = concat!(
+            "<script>if (a < b) x = '</not-script>';</SCRIPT>",
+            "<style>.x::before { content: '<b>'; }</StYlE>",
+            "<textarea><b>literal</b></TEXTAREA>",
+            "<title>A < B</TiTlE>",
+            "<p>x</p>"
+        )
+        .to_string();
+        let parsed = safe_parse_html(input).unwrap();
+
+        assert_eq!(parsed.children.len(), 5);
+        assert_eq!(parsed.children[0].tag_name, Some(Script));
+        assert_eq!(
+            parsed.children[0].children[0].value.as_deref(),
+            Some("if (a < b) x = '</not-script>';")
+        );
+        assert_eq!(parsed.children[1].tag_name, Some(Style));
+        assert_eq!(
+            parsed.children[1].children[0].value.as_deref(),
+            Some(".x::before { content: '<b>'; }")
+        );
+        assert_eq!(
+            parsed.children[2].tag_name,
+            Some(Unknown("textarea".to_string()))
+        );
+        assert_eq!(
+            parsed.children[2].children[0].value.as_deref(),
+            Some("<b>literal</b>")
+        );
+        assert_eq!(parsed.children[3].tag_name, Some(Title));
+        assert_eq!(
+            parsed.children[3].children[0].value.as_deref(),
+            Some("A < B")
+        );
+        assert_eq!(parsed.children[4].tag_name, Some(P));
+    }
+
+    #[test]
+    fn raw_text_close_scan_handles_many_false_candidates() {
+        let body = "</".repeat(4_096);
+        let parsed = safe_parse_html(format!("<script>{body}</ScRiPt \n\t><p>x</p>")).unwrap();
+
+        assert_eq!(parsed.children.len(), 2);
+        assert_eq!(
+            parsed.children[0].children[0].value.as_deref(),
+            Some(body.as_str())
+        );
+        assert_eq!(parsed.children[1].tag_name, Some(P));
+    }
+
+    #[test]
+    fn unterminated_raw_text_returns_error() {
+        let input = "<script>if (a < b)".to_string();
+        assert_eq!(
+            safe_parse_html(input.clone()),
+            Err(ParseHTMLError::MalformedTag(
+                input,
+                MalformedTagError::MissingClosingBracket(0)
+            ))
+        );
+    }
+
+    #[test]
+    fn quoted_attribute_values_support_both_quote_styles_and_empty_values() {
+        let parsed = safe_parse_html(
+            "<a href='' title='say \"hi\"' data-note=\"it's fine\"></a>".to_string(),
+        )
+        .unwrap();
+        let attributes = parsed.attributes.as_ref().unwrap();
+
+        assert_eq!(attributes.get("href"), Some(AttributeValues::from("")));
+        assert_eq!(
+            attributes.get("title"),
+            Some(AttributeValues::from("say \"hi\""))
+        );
+        assert_eq!(
+            attributes.get("data-note"),
+            Some(AttributeValues::from("it's fine"))
         );
     }
 
@@ -311,11 +492,7 @@ mod parser_tests {
         let input = "<div class=\"hello=world\"></div>".to_string();
         let mut attributes = Attributes::new();
         attributes.insert("class".to_string(), AttributeValues::from("hello=world"));
-        let expected = Node {
-            tag_name: Some(Div),
-            attributes: Some(attributes),
-            ..Default::default()
-        };
+        let expected = Node::new(Some(Div), None, Some(attributes), None, Vec::new());
         assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 
@@ -335,8 +512,11 @@ mod parser_tests {
         );
         let expected = Node {
             tag_name: Some(Meta),
+            value: None,
             attributes: Some(attributes),
-            ..Default::default()
+            self_closing: true,
+            within_special_tag: None,
+            children: Vec::new(),
         };
         assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
@@ -349,11 +529,13 @@ mod parser_tests {
         attributes.insert("id".to_string(), AttributeValues::from("search"));
         attributes.insert("role".to_string(), AttributeValues::from("search"));
         attributes.insert("action".to_string(), AttributeValues::from("/search"));
-        let expected = Node {
-            tag_name: Some(Unknown("form".to_string())),
-            attributes: Some(attributes),
-            ..Default::default()
-        };
+        let expected = Node::new(
+            Some(Unknown("form".to_string())),
+            None,
+            Some(attributes),
+            None,
+            Vec::new(),
+        );
         assert_eq!(safe_parse_html(input).unwrap(), expected);
     }
 }

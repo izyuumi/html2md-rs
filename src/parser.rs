@@ -1,6 +1,9 @@
-//! This module contains functions which parse HTML strings into a custom Node struct.
+//! Parses a pragmatic HTML subset into a custom [`Node`] tree; this is not an HTML5 parser.
 //!
-//! The Node struct is used to represent the HTML elements and their children in a tree-like structure.
+//! Tags are never implicitly closed. When input ends with open tags, remaining stack entries are
+//! returned as top-level nodes. Whitespace-only ordinary text nodes are omitted; raw-text element
+//! bodies are preserved.
+//! Supported element names map to their `NodeType` variants; all others become `NodeType::Unknown`.
 //!
 //! With the `safe_parse_html` function, malformed HTML will return an error instead of panicking.
 //! The `parse_html` function is a wrapper around `safe_parse_html` that panics if the input is malformed. However, it is deprecated and will be removed in future versions.
@@ -9,7 +12,7 @@ use crate::structs::{
     AttributeValues, Attributes, Node,
     NodeType::{self, *},
 };
-use std::{collections::VecDeque, fmt::Display};
+use std::fmt::Display;
 
 /// Errors that will be returned when parsing malformed HTML tags
 #[derive(Debug, PartialEq, Eq)]
@@ -114,9 +117,11 @@ impl Display for ParseHTMLError {
 ///         tag_name: Some(Text),
 ///         value: Some("hello".to_string()),
 ///         attributes: None,
+///         self_closing: false,
 ///         within_special_tag: None,
 ///         children: Vec::new(),
 ///     }],
+///     self_closing: false,
 /// };
 ///
 /// assert_eq!(parsed, Ok(expected));
@@ -133,10 +138,30 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
         let rest = &input[current_index..];
         if rest.starts_with("<!") {
             // if the current character is an exclamation mark, it's a comment or DOCTYPE
-            if rest.starts_with("<!DOCTYPE") {
+            if rest
+                .as_bytes()
+                .get(..9)
+                .is_some_and(|prefix| prefix.eq_ignore_ascii_case(b"<!DOCTYPE"))
+            {
                 // if the comment is a DOCTYPE, ignore it
-                current_index += rest.find('>').unwrap() + 1;
-                continue;
+                if let Some(closing_index) = rest.find('>') {
+                    current_index += closing_index + 1;
+                    continue;
+                }
+                return Err(ParseHTMLError::MalformedTag(
+                    rest.to_string(),
+                    MalformedTagError::MissingClosingBracket(current_index as u32),
+                ));
+            }
+            if rest.starts_with("<![CDATA[") {
+                if let Some(closing_index) = rest.find("]]>") {
+                    current_index += closing_index + 3;
+                    continue;
+                }
+                return Err(ParseHTMLError::MalformedTag(
+                    rest.to_string(),
+                    MalformedTagError::MissingClosingBracket(current_index as u32),
+                ));
             }
             // find the closing comment tag
             if let Some(closing_comment_index) = rest.find("-->") {
@@ -144,7 +169,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
                 // extract the comment from the rest
                 let comment = &rest[..closing_comment_index + 3];
                 // create a new node with the comment
-                let new_node = Node {
+                let mut new_node = Node {
                     tag_name: Some(Comment),
                     value: Some(
                         comment
@@ -154,11 +179,16 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
                             .to_string(),
                     ),
                     attributes: None,
+                    self_closing: false,
                     within_special_tag: None,
                     children: Vec::new(),
                 };
-                // add the new_node to the stack
-                nodes.push(new_node);
+                if let Some(parent) = stack.last_mut() {
+                    modify_node_with_parent(&mut new_node, parent);
+                    parent.children.push(new_node);
+                } else {
+                    nodes.push(new_node);
+                }
                 // increment the current_index by the closing_comment_index + 3
                 // and continue to the next iteration
                 current_index += closing_comment_index + 3;
@@ -172,17 +202,27 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
         }
 
         if rest.starts_with('<') {
-            if let Some(mut closing_index) = find_closing_bracket_index(rest) {
+            let closing_bracket = find_closing_bracket_index(rest);
+            if let Err(Some(value_start)) = closing_bracket {
+                let value_end = rest.len() - usize::from(rest.ends_with('>'));
+                return Err(ParseHTMLError::MalformedAttribute(
+                    rest[value_start..value_end].to_string(),
+                    MalformedAttributeError::MissingQuotationMark(current_index as u32),
+                ));
+            }
+            if let Ok(mut closing_index) = closing_bracket {
+                let tag_end = closing_index + 1;
                 // if the tag is a self-closing tag (i.e. <tag_name ... />)
-                let self_closing = if rest.chars().nth(closing_index - 1) == Some('/') {
-                    // if the last character right before the closing bracket is a forward slash, the tag is self-closing
-                    // closing_index is the index of the closing bracket, so decrement it to ignore the forward slash
-                    closing_index -= 1;
-                    true
-                } else {
-                    // if the last character right before the closing bracket is not a forward slash, the tag is not self-closing
-                    false
-                };
+                let explicitly_self_closing =
+                    if rest.as_bytes().get(closing_index - 1) == Some(&b'/') {
+                        // if the last character right before the closing bracket is a forward slash, the tag is self-closing
+                        // closing_index is the index of the closing bracket, so decrement it to ignore the forward slash
+                        closing_index -= 1;
+                        true
+                    } else {
+                        // if the last character right before the closing bracket is not a forward slash, the tag is not self-closing
+                        false
+                    };
 
                 // the tag content is the string between the opening and closing brackets
                 let tag_content = &rest[1..closing_index];
@@ -247,12 +287,15 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
 
                 // parse thae tag name into a NodeType from the node_name string
                 let node_type = NodeType::from_tag_str(node_name);
+                let raw_text = is_raw_text_tag(node_name);
+                let self_closing = explicitly_self_closing || is_html_void_tag(node_name);
 
                 // initialize a new node with the tag name and attribute map
                 let mut new_node = Node {
-                    tag_name: Some(node_type.clone()),
+                    tag_name: Some(node_type),
                     value: None,
                     attributes: attribute_map,
+                    self_closing,
                     within_special_tag: None,
                     children: Vec::new(),
                 };
@@ -266,9 +309,40 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
                     } else {
                         nodes.push(new_node);
                     }
-                    // because the tag is self-closing, increment the current_index by the closing_index + 2
+                    // because the tag is self-closing, increment past its closing bracket
                     // and continute to the next iteration
-                    current_index += closing_index + 2;
+                    current_index += tag_end;
+                    continue;
+                }
+                if raw_text {
+                    let content_start = closing_index + 1;
+                    let raw_rest = &rest[content_start..];
+                    let Some((body_end, closing_end)) = find_raw_text_closing(raw_rest, node_name)
+                    else {
+                        return Err(ParseHTMLError::MalformedTag(
+                            rest.to_string(),
+                            MalformedTagError::MissingClosingBracket(current_index as u32),
+                        ));
+                    };
+                    if let Some(parent) = stack.last_mut() {
+                        modify_node_with_parent(&mut new_node, parent);
+                    }
+                    let mut text_node = Node {
+                        tag_name: Some(Text),
+                        value: Some(raw_rest[..body_end].to_string()),
+                        attributes: None,
+                        self_closing: false,
+                        within_special_tag: None,
+                        children: Vec::new(),
+                    };
+                    modify_node_with_parent(&mut text_node, &new_node);
+                    new_node.children.push(text_node);
+                    if let Some(parent) = stack.last_mut() {
+                        parent.children.push(new_node);
+                    } else {
+                        nodes.push(new_node);
+                    }
+                    current_index += content_start + closing_end;
                     continue;
                 }
                 // if the tag is not self-closing
@@ -278,10 +352,9 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
                 }
                 stack.push(new_node);
                 // because the tag is not self-closing, increment the current_index by the closing_index + 1
-                current_index += closing_index + 1;
+                current_index += tag_end;
                 continue;
             } else {
-                // if a closing bracket is not found, the tag is malformed
                 return Err(ParseHTMLError::MalformedTag(
                     rest.to_string(),
                     MalformedTagError::MissingClosingBracket(current_index as u32),
@@ -294,24 +367,53 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
         // else, anything upto the opening bracket is the content of the text
         let next_opening_tag = rest.find('<').unwrap_or(rest.len());
         let text = &rest[..next_opening_tag];
-        if text.trim().is_empty() {
-            // if text is empty or only whitespace, ignore it
+        let preserve_whitespace = stack
+            .last()
+            .and_then(|parent| parent.tag_name.as_ref())
+            .is_some_and(|tag| matches!(tag, Code | Pre));
+        if text.trim().is_empty() && !preserve_whitespace {
+            let previous_is_phrasing = stack
+                .last()
+                .and_then(|parent| parent.children.last())
+                .or_else(|| stack.is_empty().then(|| nodes.last()).flatten())
+                .is_some_and(is_phrasing_node);
+            if previous_is_phrasing && starts_with_phrasing_node(&rest[next_opening_tag..]) {
+                let mut whitespace = Node {
+                    tag_name: Some(Text),
+                    value: Some(" ".to_string()),
+                    attributes: None,
+                    self_closing: false,
+                    within_special_tag: None,
+                    children: Vec::new(),
+                };
+                if let Some(parent) = stack.last_mut() {
+                    modify_node_with_parent(&mut whitespace, parent);
+                    parent.children.push(whitespace);
+                } else {
+                    nodes.push(whitespace);
+                }
+            }
             // increment the current_index by next_opening_tag and continue to the next iteration
             current_index += next_opening_tag;
             continue;
         }
 
         // initialize new_node as text with the content of the text
-        let new_node = Node {
+        let mut new_node = Node {
             tag_name: Some(Text),
             value: Some(text.to_string()),
             attributes: None,
+            self_closing: false,
             within_special_tag: None,
             children: Vec::new(),
         };
 
-        // add the new_node to the stack
-        modify_stack_with_node(&mut stack, new_node);
+        if let Some(parent) = stack.last_mut() {
+            modify_node_with_parent(&mut new_node, parent);
+            parent.children.push(new_node);
+        } else {
+            nodes.push(new_node);
+        }
 
         current_index += next_opening_tag
     }
@@ -331,27 +433,10 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
         tag_name: None,
         value: None,
         attributes: None,
+        self_closing: false,
         within_special_tag: None,
         children: nodes,
     })
-}
-
-/// Adds a new node to the stack with respect to the parent node's special tag and tag type
-///
-/// # Arguments
-///
-/// * `stack` - A mutable reference to a vector of nodes
-/// * `new_node` - A mutable reference to a node to be added to the stack
-fn modify_stack_with_node(stack: &mut Vec<Node>, mut new_node: Node) {
-    if let Some(parent) = stack.last_mut() {
-        // if the stack is not empty, add new_node to the parent
-        // modify the new_node with the parent's within_special_tag and tag type
-        modify_node_with_parent(&mut new_node, parent);
-        parent.children.push(new_node.clone());
-        return;
-    }
-    // if stack is empty, add new_node to the stack
-    stack.push(new_node.clone());
 }
 
 /// Modifies a node with the parent's within_special_tag and tag type
@@ -406,9 +491,11 @@ fn modify_node_with_parent(node: &mut Node, parent: &Node) {
 ///         tag_name: Some(Text),
 ///         value: Some("hello".to_string()),
 ///         attributes: None,
+///         self_closing: false,
 ///         within_special_tag: None,
 ///         children: Vec::new(),
 ///     }],
+///     self_closing: false,
 /// };
 ///
 /// assert_eq!(parsed, expected);
@@ -440,29 +527,36 @@ fn parse_tag_attributes(
 
     let mut current_key = String::new();
     let mut current_value_in_quotes = String::new();
-    let mut in_quotes = false;
+    let mut quote = None;
     let mut may_be_reading_non_quoted_value = false;
+    let mut whitespace_after_key = false;
 
     for char in tag_attributes.trim().chars() {
         // iterate through each character in the trimmed tag_attributes string
 
-        if in_quotes {
+        if let Some(quotation_mark) = quote {
             // if we are in quotation marks, just add the character to the current_value_in_quotes
             // except for if the character is a quotation mark, which indicates the end of the value
-            if char.eq(&'"') {
+            if char == quotation_mark {
                 // if the character is a quotation mark, add the current_value_in_quotes to the attribute_map
                 // and reset the current_key and current_value_in_quotes
                 add_to_attribute_map(&mut attribute_map, &current_key, &current_value_in_quotes);
                 current_key.clear();
                 current_value_in_quotes.clear();
-                in_quotes = false;
+                quote = None;
                 continue;
             }
             current_value_in_quotes.push(char);
             continue;
         }
 
-        if char.eq(&'"') {
+        if whitespace_after_key && !char.is_whitespace() && char != '=' {
+            attribute_map.insert(current_key.clone(), AttributeValues::from(true));
+            current_key.clear();
+            whitespace_after_key = false;
+        }
+
+        if char.eq(&'"') || char.eq(&'\'') {
             // if the character is a quotation mark, we are about to start the value
             // we know in_quotes is false because that is checked above
             if current_key.is_empty() {
@@ -473,7 +567,7 @@ fn parse_tag_attributes(
                 ));
             }
             // set the in_quotes flag to true
-            in_quotes = true;
+            quote = Some(char);
             // if the character is a quotation mark, we are going to be in quotes
             // so we don't need to keep track of non-quoted value flag
             may_be_reading_non_quoted_value = false;
@@ -496,16 +590,15 @@ fn parse_tag_attributes(
             }
             // if the character is whitespace, if could be indicating the end of a key
             if !current_key.is_empty() {
-                // if the key has some value, add it to the attribute_map with value true
-                attribute_map.insert(current_key.clone(), AttributeValues::from(true));
-                current_key.clear();
+                // Defer insertion until we know whether an equal sign follows the whitespace.
+                whitespace_after_key = true;
                 continue;
             }
             // if the current_key is empty, the whitespace can be ignored
             continue;
         }
 
-        if !in_quotes && !may_be_reading_non_quoted_value && char.eq(&'=') {
+        if !may_be_reading_non_quoted_value && char.eq(&'=') {
             // if the character is an equal sign, the current_key is complete
             // if we are in quotes or reading a non-quoted value, the equal sign is part of the value
             // and we are about to start the value
@@ -517,6 +610,7 @@ fn parse_tag_attributes(
                 ));
             }
             // equal sign indicates the start of the value up to the next whitespace
+            whitespace_after_key = false;
             may_be_reading_non_quoted_value = true;
             continue;
         }
@@ -531,16 +625,25 @@ fn parse_tag_attributes(
         current_key.push(char);
     }
 
-    if may_be_reading_non_quoted_value && !current_value_in_quotes.is_empty() {
-        // if we are reading a non-quoted value and the value is not empty, add the value to the attribute_map
+    if may_be_reading_non_quoted_value {
+        if current_value_in_quotes.is_empty() {
+            return Err(ParseHTMLError::MalformedAttribute(
+                tag_attributes.to_string(),
+                MalformedAttributeError::MissingAttributeValue(current_index as u32),
+            ));
+        }
         add_to_attribute_map(&mut attribute_map, &current_key, &current_value_in_quotes);
     }
 
-    if in_quotes {
+    if quote.is_some() {
         return Err(ParseHTMLError::MalformedAttribute(
             current_value_in_quotes,
             MalformedAttributeError::MissingQuotationMark(current_index as u32),
         ));
+    }
+
+    if !may_be_reading_non_quoted_value && !current_key.is_empty() {
+        attribute_map.insert(current_key, AttributeValues::from(true));
     }
 
     // if not, return the attribute map
@@ -555,7 +658,7 @@ fn add_to_attribute_map(
     current_key: &str,
     current_value_in_quotes: &str,
 ) {
-    if current_key.is_empty() || current_value_in_quotes.is_empty() {
+    if current_key.is_empty() {
         return;
     }
     attribute_map.insert(
@@ -564,23 +667,80 @@ fn add_to_attribute_map(
     );
 }
 
-fn find_closing_bracket_index(rest: &str) -> Option<usize> {
-    let mut attribute_value_stack: VecDeque<char> = VecDeque::new(); // needed to fix #31
+fn find_closing_bracket_index(rest: &str) -> Result<usize, Option<usize>> {
+    let mut quote = None;
     for (idx, char) in rest.char_indices() {
-        if char.eq(&'"') || char.eq(&'\'') {
-            if let Some(back) = attribute_value_stack.back() {
-                if back.eq(&char) {
-                    attribute_value_stack.pop_back();
-                } else {
-                    attribute_value_stack.push_back(char)
-                }
-            } else {
-                attribute_value_stack.push_back(char)
+        match quote {
+            Some((quotation_mark, _)) if char == quotation_mark => quote = None,
+            Some(_) => {}
+            None if char.eq(&'"') || char.eq(&'\'') => quote = Some((char, idx + 1)),
+            None if char.eq(&'>') => return Ok(idx),
+            None => {}
+        }
+    }
+    Err(quote.map(|(_, value_start)| value_start))
+}
+
+fn is_raw_text_tag(tag_name: &str) -> bool {
+    ["script", "style", "textarea", "title"]
+        .iter()
+        .any(|raw_tag| tag_name.eq_ignore_ascii_case(raw_tag))
+}
+
+fn is_html_void_tag(tag_name: &str) -> bool {
+    [
+        "area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param",
+        "source", "track", "wbr",
+    ]
+    .iter()
+    .any(|void_tag| tag_name.eq_ignore_ascii_case(void_tag))
+}
+
+fn is_phrasing_node(node: &Node) -> bool {
+    node.tag_name.as_ref().is_some_and(NodeType::is_phrasing)
+}
+
+fn starts_with_phrasing_node(input: &str) -> bool {
+    if input.starts_with("<!--") {
+        return true;
+    }
+    let Some(tag) = input.strip_prefix('<') else {
+        return false;
+    };
+    if tag.starts_with('/') {
+        return false;
+    }
+    let name = tag
+        .split(|character: char| character.is_whitespace() || matches!(character, '/' | '>'))
+        .next()
+        .unwrap_or_default();
+    NodeType::from_tag_str(name).is_phrasing()
+}
+
+fn find_raw_text_closing(rest: &str, tag_name: &str) -> Option<(usize, usize)> {
+    let bytes = rest.as_bytes();
+    let tag_name = tag_name.as_bytes();
+    let mut search_from = 0;
+    while let Some(relative_start) = rest[search_from..].find("</") {
+        let start = search_from + relative_start;
+        let name_start = start + 2;
+        let name_end = name_start + tag_name.len();
+        if bytes
+            .get(name_start..name_end)
+            .is_some_and(|candidate| candidate.eq_ignore_ascii_case(tag_name))
+        {
+            let mut closing_bracket = name_end;
+            while bytes
+                .get(closing_bracket)
+                .is_some_and(|byte| byte.is_ascii_whitespace())
+            {
+                closing_bracket += 1;
+            }
+            if bytes.get(closing_bracket) == Some(&b'>') {
+                return Some((start, closing_bracket + 1));
             }
         }
-        if char.eq(&'>') && attribute_value_stack.is_empty() {
-            return Some(idx);
-        }
+        search_from = name_start;
     }
     None
 }
@@ -607,7 +767,6 @@ fn issue_31() {
         attributes: Some(Attributes {
             id: None,
             class: None,
-            href: None,
             attributes: std::collections::HashMap::from([
                 (
                     "src".to_string(),
@@ -616,6 +775,7 @@ fn issue_31() {
                 ("alt".to_string(), AttributeValues::from("Rust<br/>Logo")),
             ]),
         }),
+        self_closing: true,
         children: Vec::new(),
         within_special_tag: None,
     };
@@ -633,12 +793,12 @@ fn issue_36() {
         attributes: Some(Attributes {
             id: None,
             class: None,
-            href: None,
             attributes: std::collections::HashMap::from([(
                 "src".to_string(),
                 AttributeValues::from("https://hoerspiele.dra.de/fileadmin/www.hoerspiele.dra.de/images/vollinfo/4970918_B01.jpg"),
             )]),
         }),
+        self_closing: true,
         children: Vec::new(),
         within_special_tag: None,
     };
