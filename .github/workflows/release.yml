@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
 
 permissions:
   contents: read
@@ -40,27 +42,16 @@ jobs:
       - name: Check minimum supported Rust version
         run: cargo check --all-features
 
-  release_please:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [validate, msrv]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-    steps:
-      - uses: google-github-actions/release-please-action@v4
-        id: release
-        with:
-          release-type: rust
-
   publish:
-    if: needs.release_please.outputs.release_created == 'true'
-    needs: release_please
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [validate, msrv]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Match tag to crate version
+        run: |
+          crate_version="$(cargo metadata --no-deps --format-version 1 | jq -r '.packages[0].version')"
+          test "v${crate_version}" = "${GITHUB_REF_NAME}"
       - name: Release Crate
         run: cargo publish --token ${{ secrets.CARGO_PUBLISH_TOKEN }}
