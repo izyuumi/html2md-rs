@@ -156,7 +156,8 @@ fn requires_angle_brackets(link: &str) -> bool {
 }
 
 fn markdown_link_destination(link: &str) -> String {
-    let use_angle_brackets = requires_angle_brackets(link);
+    let link = decode_html_entities(link);
+    let use_angle_brackets = requires_angle_brackets(&link);
     let mut output = String::with_capacity(link.len() + usize::from(use_angle_brackets) * 2);
 
     if use_angle_brackets {
@@ -166,7 +167,7 @@ fn markdown_link_destination(link: &str) -> String {
         if character.is_control() {
             push_percent_encoded(&mut output, character);
         } else {
-            if use_angle_brackets && matches!(character, '<' | '>' | '\\') {
+            if character == '&' || (use_angle_brackets && matches!(character, '<' | '>' | '\\')) {
                 output.push('\\');
             }
             output.push(character);

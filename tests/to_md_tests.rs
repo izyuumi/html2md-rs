@@ -134,6 +134,13 @@ mod to_md_tests {
     }
 
     #[test]
+    fn link_decodes_supported_entities_once_and_preserves_unknown_entities() {
+        let input = "<a href='/?a=1&amp;b=2&copy;'>link</a>".to_string();
+        let expected = r"[link](/?a=1\&b=2\&copy;)".to_string();
+        assert_eq!(safe_from_html_to_md(input).unwrap(), expected);
+    }
+
+    #[test]
     fn code_block() {
         let input = "<pre><code class=\"language-rust\">
 let x: i32 = 123;
