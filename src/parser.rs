@@ -238,10 +238,7 @@ pub fn safe_parse_html(input: String) -> Result<Node, ParseHTMLError> {
                     // attributes is the string after the first space before the closing bracket
                     let attributes = &tag_content[space_index..];
                     // parse the attribute string into a map
-                    match parse_tag_attributes(attributes, current_index) {
-                        Ok(map) => attribute_map = map,
-                        Err(err) => return Err(err),
-                    }
+                    attribute_map = parse_tag_attributes(attributes, current_index)?;
                 } else {
                     // if the tag doesn't contain a space, the tag is the node name
                     node_name = tag_content;
