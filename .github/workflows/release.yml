@@ -59,6 +59,8 @@ jobs:
     needs: [validate, msrv, semver]
     permissions:
       contents: read
+      id-token: write
+      attestations: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -121,6 +123,40 @@ jobs:
               exit 1
               ;;
           esac
+      - name: Locate crate
+        id: crate
+        shell: bash
+        run: |
+          metadata="$(cargo metadata --no-deps --format-version 1)"
+          crate_name="$(jq -r '.packages[0].name' <<<"${metadata}")"
+          crate_version="$(jq -r '.packages[0].version' <<<"${metadata}")"
+          package_path="target/package/${crate_name}-${crate_version}.crate"
+          test -f "${package_path}"
+          printf 'path=%s\n' "${package_path}" >> "${GITHUB_OUTPUT}"
+      - name: SBOM
+        uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c # v0.24.3
+        with:
+          path: .
+          format: spdx-json
+          output-file: ${{ runner.temp }}/crate.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+      # Attest the .crate served by crates.io so users can verify their download.
+      # Release Crate checks the checksum when the version is already published.
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ steps.crate.outputs.path }}
+      # Bind the SPDX SBOM to the same .crate.
+      - name: Attest SBOM
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4.1.0
+        with:
+          subject-path: ${{ steps.crate.outputs.path }}
+          sbom-path: ${{ runner.temp }}/crate.spdx.json
+      - name: Verify attestation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh attestation verify "${{ steps.crate.outputs.path }}" --repo izyuumi/html2md-rs
 
   github-release:
     if: startsWith(github.ref, 'refs/tags/v')
